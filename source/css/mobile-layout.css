@@ -1,0 +1,146 @@
+/* Shared by the official HTTPS client and the packaged offline client. */
+.ps-dex-content, .ps-dex-action { display:contents; }
+.ps-offline #btn-logout { display:none!important; }
+.news-translation-tools { flex-shrink:0; flex-wrap:wrap; gap:6px; margin:4px 0 8px; }
+.news-translation-tools .note { margin:0; font-size:11px; }
+.news-translation-tools .btn { min-height:32px; padding:4px 8px; font-size:12px; }
+.news-body { min-height:0; }
+:root { --ps-chrome-bottom:0px; }
+.topbar { left:calc(12px + var(--ps-safe-left)); right:calc(12px + var(--ps-safe-right)); top:calc(10px + var(--ps-safe-top)); justify-content:flex-end; flex-wrap:wrap; gap:8px; min-width:0; }
+.topbar > * { flex-shrink:0; }
+#user-pill { min-width:0; max-width:180px; }
+#user-pill span[translate="no"] { overflow:hidden; text-overflow:ellipsis; white-space:nowrap; }
+#scr-menu { padding:calc(var(--ps-chrome-bottom) + 18px) max(14px,var(--ps-safe-right)) max(14px,var(--ps-safe-bottom)) max(14px,var(--ps-safe-left)); gap:24px; }
+#scr-menu .menu-left { padding:8px 12px; }
+#scr-menu .menu-right { padding:4px 6px; }
+.scr:not(#scr-menu):not(#scr-login):not(#scr-map) { padding-top:max(16px,calc(var(--ps-chrome-bottom) + 16px)); }
+.scr:not(#scr-menu):not(#scr-login):not(#scr-map) > .box { max-height:calc(var(--ps-vh,100vh) - var(--ps-chrome-bottom,0px) - 36px - var(--ps-safe-bottom,0px)); }
+#scr-login { padding:12px max(16px,var(--ps-safe-right)) 12px max(16px,var(--ps-safe-left)); align-items:center; }
+#scr-login > .box { width:min(420px,100%)!important; max-height:calc(100dvh - 24px); overflow-y:auto; overscroll-behavior:contain; }
+#login-form { display:flex; flex-direction:column; }
+#login-form .field { width:100%; min-height:40px; font-size:16px; }
+#login-form label { margin:8px 0 4px; }
+#login-form .err:empty { display:none; }
+#scr-login .row { flex-wrap:wrap; gap:8px; }
+#scr-login .row > .btn { min-height:38px; }
+@media (max-height:520px) and (min-width:600px) {
+  .topbar { gap:7px; }
+  .topbar .pill { padding:4px 9px; font-size:13px; gap:5px; min-height:34px; }
+  .topbar .btn.small { padding:5px 9px; min-height:34px; font-size:13px; }
+  #user-pill { max-width:150px; }
+  #scr-menu { gap:18px; }
+  #scr-menu .menu-right { width:min(54vw,480px); }
+  #scr-menu .menu-right .box { padding:10px 12px; }
+  #scr-menu .menu-list { gap:6px 10px; }
+  #scr-menu .menu-item { min-height:38px; padding:6px 8px; }
+  #scr-menu .menu-item.play { min-height:55px; margin-bottom:4px; }
+  #scr-login > .box { padding:12px 20px; }
+  #scr-login .logo { margin-bottom:4px; }
+  #scr-login .logo .t1 { font-size:26px; }
+  #scr-login .logo .t2, #scr-login .login-tag { display:none; }
+  #scr-login .login-official { margin:4px 0; font-size:11px; }
+  #scr-login .tabs { margin-bottom:4px; }
+  #scr-login .tab { padding:5px 8px; }
+  #login-form label { margin:5px 0 3px; font-size:12px; }
+  #login-form .field { min-height:36px; padding:5px 10px; }
+  #scr-login .btn { padding:6px 12px; }
+  #scr-login .note, #scr-login #login-mode { margin:6px 0; font-size:11px; }
+}
+/* Collection and gacha need independent scrolling areas on low screens. */
+@media (max-height:600px) and (min-width:600px) {
+  #scr-dex, #scr-gacha { padding-bottom:max(10px,var(--ps-safe-bottom)); }
+  #scr-dex > .box, #scr-gacha > .box {
+    height:100%; min-height:0; padding:10px 12px;
+    display:flex; flex-direction:column; overflow:hidden;
+  }
+  #scr-dex > .box > .row, #scr-gacha > .box > .row { flex-shrink:0; min-height:32px; }
+  #scr-dex h2, #scr-gacha h2 { font-size:20px; margin:0; }
+  #scr-dex [data-back], #scr-gacha [data-back] { min-height:32px; padding:4px 12px; font-size:13px; }
+  #dex-gens, #gacha-gens { flex-shrink:0; margin-top:4px; padding:2px 0 5px; gap:5px; }
+  #dex-gens .gen-tab, #gacha-gens .gen-tab { min-height:36px; padding:4px 10px; }
+  #dex-gens b, #gacha-gens b { font-size:12px; }
+  #dex-gens small, #gacha-gens small { font-size:10px; }
+  #scr-dex .split, #scr-gacha .split { flex:1; min-height:0; gap:10px; margin-top:4px!important; }
+  #scr-dex .split { grid-template-columns:minmax(0,1fr) minmax(190px,30%); }
+  #scr-dex .split > div:first-child { display:flex; flex-direction:column; min-height:0; min-width:0; }
+  #dex-filters { display:flex; flex-wrap:nowrap; flex-shrink:0; gap:4px; overflow-x:auto; padding:0 0 5px; margin:0; }
+  #dex-filters .chip { flex-shrink:0; min-height:30px; padding:3px 8px; font-size:11px; }
+  #dex-grid { flex:1; min-height:0; max-height:none; grid-template-columns:repeat(auto-fill,minmax(74px,1fr)); gap:5px; align-content:start; padding:3px; }
+  #dex-grid .cell { padding:12px 2px 4px; border-radius:7px; }
+  #dex-grid .cell canvas { width:60px; height:52px; }
+  #dex-grid .cell b { font-size:11px; }
+  #dex-grid .cell .no { font-size:9px; }
+  #dex-grid .stars-row img { width:12px!important; height:12px!important; }
+  #dex-detail { display:flex; flex-direction:column; min-height:0; overflow:hidden; padding:6px 8px; }
+  #dex-detail .ps-dex-content { display:block; flex:1; min-height:0; overflow-y:auto; overscroll-behavior:contain; padding:4px; }
+  #dex-detail .ps-dex-action { display:block; flex-shrink:0; padding-top:6px; }
+  #dex-detail .ps-dex-action:empty { display:none; }
+  #dex-detail .stage { display:block; width:96px; height:83px; margin:2px auto 8px; }
+  #dex-detail h3 { font-size:16px; margin:2px 0; }
+  #dex-detail .stat { grid-template-columns:54px 1fr 30px; font-size:11px; gap:4px; margin:3px 0; }
+  #dex-detail p { font-size:11px!important; margin:5px 0!important; }
+  #dex-detail .ps-dex-action .btn { position:static; margin:0; min-height:34px; padding:5px 6px; font-size:12px; box-shadow:none; }
+  #scr-gacha .split { grid-template-columns:minmax(0,1fr) minmax(185px,28%); }
+  #scr-gacha .split > div:first-child { display:flex; flex-direction:column; min-height:0; min-width:0; }
+  #scr-gacha .banner { flex:1; min-height:0; padding:10px; overflow-y:auto; display:grid; grid-template-columns:minmax(0,1fr) minmax(90px,40%); column-gap:8px; align-content:start; }
+  #scr-gacha .banner h3 { font-size:18px; grid-column:1; }
+  #banner-desc { font-size:12px; line-height:1.5; grid-column:1; }
+  #gacha-owned { font-size:11px; grid-column:1; }
+  #scr-gacha .banner .feat { grid-column:2; grid-row:1 / 4; align-self:center; align-items:center; height:100px; margin:0; gap:0; }
+  #gacha-feat canvas { flex:0 1 64px; min-width:0; width:min(64px,33%); height:auto; aspect-ratio:170 / 190; }
+  #scr-gacha .split > div:first-child > .row { flex-shrink:0; gap:6px; margin-top:8px!important; }
+  #scr-gacha .split > div:first-child > .row .btn { min-width:0; min-height:36px; padding:5px 6px; font-size:12px; }
+  #gacha-tickets, #gacha-pity { flex-shrink:0; font-size:10px; line-height:1.3; margin:5px 0 0; }
+  #gacha-rates { min-height:0; overflow-y:auto; padding:8px 10px; font-size:11px; }
+  #gacha-rates h3 { font-size:16px; }
+  #gacha-rates .note { font-size:10px; line-height:1.5; margin-top:6px; }
+}
+/* Run mode switch under the Play button: Arceus at minute 30 or endless. */
+#ps-run-mode { grid-column:1 / -1; display:flex; width:100%; gap:6px; margin:2px 0 6px; }
+#ps-run-mode button { flex:1 1 0; min-width:0; min-height:32px; padding:3px 8px; font:inherit; font-size:14px; line-height:1.2; white-space:nowrap; overflow:hidden; text-overflow:ellipsis; border-radius:8px; border:1px solid rgba(255,255,255,.22); background:rgba(0,0,0,.22); color:var(--muted); cursor:pointer; }
+#ps-run-mode button.on { background:rgba(255,214,90,.18); border-color:var(--gold); color:var(--gold); }
+.ps-mode-side > .menu-item.play { grid-column:1 / 2!important; min-width:0; }
+.ps-mode-side > #ps-run-mode { grid-column:2 / 3; flex-direction:column; justify-content:center; margin:0; gap:4px; }
+.ps-mode-side > #ps-run-mode button { flex:0 0 auto; }
+@media (max-height:520px) {
+  #ps-run-mode { margin:0 0 3px; gap:4px; }
+  #ps-run-mode button { min-height:26px; padding:2px 6px; font-size:12px; }
+}
+/* Dialogs taller than the screen scroll instead of being cut off at both ends
+   (some Android WebViews ignore the box's max-height inside a centered flex). */
+.scr.dim:not(#scr-map) { overflow-y:auto; align-items:flex-start; }
+.scr.dim:not(#scr-map) > .box { margin-top:auto; margin-bottom:auto; }
+/* Run summary on landscape phones: four columns, compact cards. */
+@media (max-height:520px) and (min-width:600px) {
+  #scr-over > .box { width:min(760px,100%)!important; }
+  #scr-over .box h2 { margin-bottom:2px; }
+  #scr-over .stats { grid-template-columns:repeat(4,1fr); gap:5px; margin:6px 0 8px; }
+  #scr-over .stats > div { padding:4px 8px; }
+  #scr-over .stats > div > span:first-child { font-size:11px; }
+  #scr-over .stats b { font-size:18px; }
+  #scr-over .stats small, #scr-over .stats .sub { font-size:11px; }
+}
+/* The official top bar gained a Save button: on phones keep it on one row by
+   showing icons only for Save/News and letting the account name shrink. */
+@media (max-width:1180px), (max-height:520px) {
+  .topbar { flex-wrap:nowrap; }
+  #btn-save > span, #btn-news > span { display:none; }
+  .topbar > #user-pill { flex-shrink:1; }
+}
+/* Settings tabs scroll sideways on phones; keep the row from being squashed. */
+#set-tabs { flex-shrink:0; padding-top:2px; padding-bottom:2px; }
+/* Pokédex filters collapse behind a button on landscape phones. */
+#ps-dex-filter { display:none; }
+@media (max-height:520px) and (min-width:600px) {
+  #ps-dex-filter { display:inline-flex; flex-shrink:0; align-items:center; min-height:26px; padding:2px 10px; font-size:12px; }
+  #scr-dex:not(.ps-dex-open) #dex-filters, #scr-dex:not(.ps-dex-open) #dex-sort { display:none!important; }
+  #scr-dex .dex-tools { flex-wrap:nowrap; }
+  #scr-dex .dex-tools #dex-count { white-space:nowrap; }
+  #scr-dex #dex-sort { flex-wrap:nowrap; overflow-x:auto; flex-shrink:0; scrollbar-width:none; margin:0 0 4px; }
+  #scr-dex #dex-sort::-webkit-scrollbar { display:none; }
+  #scr-dex #dex-sort .chip { flex-shrink:0; min-height:26px; padding:2px 8px; font-size:11px; }
+  #dex-gens .gen-tab { min-height:32px; padding:2px 9px; }
+}
+.ps-lay-atk { border-color:rgba(255,138,107,.8); }
+.ps-lay-atk .knob { background:rgba(255,107,74,.85); border-color:#8a1f10; }
+#ps-lay-atk { justify-content:center; align-items:center; gap:6px; margin:6px 0 0; }

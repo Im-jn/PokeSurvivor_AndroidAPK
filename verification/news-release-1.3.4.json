@@ -1,0 +1,30 @@
+{
+  "apk": "dist/PokeSurvivor-1.3.4.apk",
+  "sha256": "05298b0a4f7b65cf91339c6a38af867ee04c191fb920ef7e0709d0272d63cc68",
+  "bytes": 86877361,
+  "matchingTranslationFiles": 5,
+  "unitTestsPassed": 45,
+  "offlineUI": {
+    "online": false,
+    "live": false,
+    "publicNoteRequests": 5,
+    "body": "游戏更新\n2026年10月18日\n新增\n有新的游戏更新。\n新增一位首领。\n新增另一种模式。",
+    "errors": []
+  },
+  "onlineUI": {
+    "online": true,
+    "live": false,
+    "publicNoteRequests": 5,
+    "body": "游戏更新\n2026年10月18日\n新增\n有新的游戏更新。\n新增一位首领。\n新增另一种模式。",
+    "errors": []
+  },
+  "realAPI": {
+    "online": true,
+    "live": true,
+    "publicNoteRequests": 2,
+    "body": "需要更新\n2026年10月15日\n调整\n当需要更新（例如，修复一个重要错误）时，您当前的运行将在提前10秒通知后结束，游戏将重新加载。您不会丢失任何东西：该运行的硬币、门票、记录和排行榜条目将以您退出的方式保存。",
+    "errors": []
+  },
+  "chinaCarrierNetworkTested": false,
+  "androidDeviceTested": false
+}

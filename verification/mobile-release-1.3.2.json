@@ -1,0 +1,28 @@
+{
+  "apk": "dist/PokeSurvivor-1.3.2.apk",
+  "sha256": "c179ad767d1a6af73dd07f649913420316ba6fc5660cf3f9b23686b3b1aa6598",
+  "matchingPackagedFiles": 16,
+  "checkedViewports": [
+    [
+      740,
+      360
+    ],
+    [
+      844,
+      390
+    ],
+    [
+      960,
+      432
+    ],
+    [
+      1280,
+      576
+    ]
+  ],
+  "gachaActionsVisible": true,
+  "dexActionOutsideScrollableDetails": true,
+  "offlineBrowserPassed": true,
+  "officialBrowserPassed": true,
+  "androidDeviceTested": false
+}

@@ -1,0 +1,29 @@
+{
+  "apk": "dist/PokeSurvivor-1.3.2.apk",
+  "sha256": "7338f1471fb82ae702a3da6c21580a4dfedfbbd6f811929da5fe2c5cf674589e",
+  "bytes": 86856717,
+  "versionAndPackageUnchanged": true,
+  "matchingPackagedFiles": 17,
+  "launcherIconsReplaced": 10,
+  "unitTestsPassed": 38,
+  "officialBrowser": {
+    "officialHTTPSPage": true,
+    "officialDBUnchanged": true,
+    "probe": {
+      "status": 200,
+      "error": null
+    },
+    "guestGameAndMapTested": true,
+    "realAccountTested": false,
+    "errors": []
+  },
+  "offlineStartup": {
+    "manualOfflineSkipsLogin": true,
+    "autoGuestOnFreshInstall": true,
+    "existingGuestPreserved": true,
+    "cloudRequests": 0,
+    "errors": []
+  },
+  "nativeStartupTimeoutSeconds": 45,
+  "androidDeviceTested": false
+}

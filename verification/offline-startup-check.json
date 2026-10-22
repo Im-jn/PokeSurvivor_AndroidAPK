@@ -1,0 +1,14 @@
+{
+  "manualOfflineSkipsLogin": true,
+  "autoGuestOnFreshInstall": true,
+  "existingGuestPreserved": true,
+  "mapPauses": true,
+  "judgment": {
+    "time": 1800.0158,
+    "active": true,
+    "cinematic": true
+  },
+  "failedAssets": [],
+  "cloudRequests": 0,
+  "errors": []
+}

@@ -1,0 +1,36 @@
+{
+  "apk": "dist/PokeSurvivor-1.3.2.apk",
+  "sha256": "c25e97e7d6594b81b3b69ca2f083646b01043a14400d2c592c3bd8600cbad15f",
+  "bytes": 86856801,
+  "versionUnchanged": true,
+  "checkedPackagedAssets": 11,
+  "staticResources": 7,
+  "accountEndpointsUnchanged": true,
+  "browser": {
+    "officialHTTPSPage": true,
+    "officialDBUnchanged": true,
+    "probe": {
+      "status": 200,
+      "error": null
+    },
+    "guestGameAndMapTested": true,
+    "realAccountTested": false,
+    "googleCDNNetworkDisabled": true,
+    "localResourceHits": [
+      "assets/fonts/PixelifyPS-400.ttf",
+      "assets/fonts/PixelifyPS-700.ttf",
+      "vendor/firebase/firebase-app-compat.js",
+      "vendor/firebase/firebase-auth-compat.js",
+      "vendor/firebase/firebase-firestore-compat.js",
+      "vendor/firebase/firebase-database-compat.js"
+    ],
+    "errors": [],
+    "requestedHosts": {
+      "pokesurvivor.com": 254,
+      "www.gstatic.com": 4,
+      "identitytoolkit.googleapis.com": 1
+    }
+  },
+  "chinaCarrierNetworkTested": false,
+  "androidDeviceTested": false
+}

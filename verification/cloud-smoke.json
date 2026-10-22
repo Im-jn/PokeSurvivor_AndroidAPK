@@ -1,0 +1,12 @@
+{
+  "info": {
+    "mode": "cloud",
+    "reason": "",
+    "project": "pokesurvivor-free",
+    "guest": false,
+    "login": true,
+    "firebase": "13.0.0"
+  },
+  "errors": [],
+  "realAccountTested": false
+}

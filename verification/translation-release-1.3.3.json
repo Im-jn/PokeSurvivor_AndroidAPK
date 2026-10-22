@@ -1,0 +1,18 @@
+{
+  "apk": "dist/PokeSurvivor-1.3.3.apk",
+  "sha256": "a3f35601a6a01046fec46fdc2c9f72effeb12d44241b847266687df158882522",
+  "bytes": 86860897,
+  "matchingTranslationFiles": 5,
+  "unitTestsPassed": 40,
+  "offlineScreensAudited": 29,
+  "onlineScreensAudited": 29,
+  "nicknameAndInputPreserved": true,
+  "offlineStartup": {
+    "manualOfflineSkipsLogin": true,
+    "autoGuestOnFreshInstall": true,
+    "existingGuestPreserved": true,
+    "cloudRequests": 0,
+    "errors": []
+  },
+  "androidDeviceTested": false
+}

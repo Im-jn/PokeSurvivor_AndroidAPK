@@ -1,0 +1,44 @@
+{
+  "fullMapShown": true,
+  "before": {
+    "unknown": 0,
+    "predicted": 669,
+    "setting": true,
+    "hasArenaProp": true
+  },
+  "results": [
+    {
+      "seed": 1,
+      "tiles": 40000,
+      "props": 882,
+      "live": 882,
+      "bad": [],
+      "badCount": 0
+    },
+    {
+      "seed": 4242,
+      "tiles": 40000,
+      "props": 866,
+      "live": 866,
+      "bad": [],
+      "badCount": 0
+    },
+    {
+      "seed": 984571,
+      "tiles": 40000,
+      "props": 858,
+      "live": 858,
+      "bad": [],
+      "badCount": 0
+    },
+    {
+      "seed": 77,
+      "tiles": 40000,
+      "props": 942,
+      "live": 942,
+      "bad": [],
+      "badCount": 0
+    }
+  ],
+  "errors": []
+}

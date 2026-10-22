@@ -1,0 +1,39 @@
+# ---- Secrets: never commit the signing key ----
+signing/
+*.p12
+*.jks
+*.keystore
+
+# ---- Built APKs (publish them as GitHub Releases instead) ----
+dist/*.apk
+dist/*.idsig
+verification/*.apk
+verification/*.idsig
+*.apk.1
+
+# Original APK from the author (input of the build, not ours to redistribute)
+apk/
+
+# ---- Downloaded build tools (see tools/*-release.json for sources) ----
+tools/jre/
+tools/jre.zip
+tools/apktool.jar
+tools/uber-apk-signer.jar
+tools/esbuild/node_modules/
+node_modules/
+
+# ---- Build output ----
+android/build/
+source/tools/cache/
+
+# Decoded APK workspace; only the interceptor source is part of the build
+native/*
+!native/OnlineScriptInterceptor.smali
+
+# ---- Editors / OS ----
+.vscode/
+.idea/
+*.log
+Thumbs.db
+Desktop.ini
+.DS_Store

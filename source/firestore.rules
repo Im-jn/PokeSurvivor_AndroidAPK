@@ -1,0 +1,182 @@
+rules_version = '2';
+
+// Reglas de seguridad de PokéSurvivor.
+//   saves/{uid}            partida: sólo su dueño
+//   names/{apodo}          reserva de apodos únicos (en minúsculas)
+//   profiles/{uid}         apodo público de cada jugador
+//   friendships/{a_b}      solicitudes y amistades entre dos jugadores
+//   runs/{uid}             (antiguo) sólo se deja borrar al borrar la cuenta
+//   lb/{tabla}/e/{id}      ranking de tiempo aguantado
+//   lbs/{tabla}            resumen con el top 50 de cada tabla
+//   pres/{uid}             en línea (aproximado) · inv/{para_de} invitaciones
+// Todo lo demás está cerrado.
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    function signedIn() { return request.auth != null; }
+    function me() { return request.auth.uid; }
+
+    match /saves/{uid} {
+      allow read, delete: if signedIn() && me() == uid;
+
+      allow create, update: if signedIn() && me() == uid && validSaveDoc();
+    }
+
+    function validSaveDoc() {
+      return request.resource.data.keys().hasOnly(['save', 'updatedAt', 'v'])
+        && request.resource.data.save is map
+        && request.resource.data.v is int
+        && request.resource.data.updatedAt == request.time;
+    }
+
+    // ---------- apodos ----------
+
+    match /names/{lower} {
+      allow read: if signedIn();
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['uid'])
+        && request.resource.data.uid == me()
+        && lower.size() >= 3 && lower.size() <= 16
+        && lower == lower.lower();
+      allow delete: if signedIn() && resource.data.uid == me();
+    }
+
+    // Perfil público: apodo, 3 favoritos, título, mejores marcas y medallas.
+    match /profiles/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn()
+        && me() == uid
+        && request.resource.data.keys().hasOnly(['name', 'lower', 'at', 'favs', 'title', 'best', 'medals'])
+        && request.resource.data.name is string
+        && request.resource.data.lower == request.resource.data.name.lower()
+        && request.resource.data.at == request.time
+        && (!('favs' in request.resource.data) || (request.resource.data.favs is list && request.resource.data.favs.size() <= 3))
+        && (!('title' in request.resource.data) || (request.resource.data.title is string && request.resource.data.title.size() <= 40))
+        && (!('best' in request.resource.data) || request.resource.data.best is map)
+        && (!('medals' in request.resource.data) || (request.resource.data.medals is list && request.resource.data.medals.size() <= 8))
+        && getAfter(/databases/$(database)/documents/names/$(request.resource.data.lower)).data.uid == me();
+      allow delete: if signedIn() && me() == uid;
+    }
+
+    // ---------- amigos ----------
+    // Un documento por pareja, con id "uidMenor_uidMayor".
+
+    match /friendships/{pid} {
+      allow read: if signedIn() && (resource == null || me() in resource.data.users);
+      allow create: if signedIn()
+        && request.resource.data.keys().hasOnly(['users', 'from', 'to', 'status', 'names', 'at'])
+        && request.resource.data.from == me()
+        && request.resource.data.to != me()
+        && request.resource.data.status == 'pending'
+        && request.resource.data.users.size() == 2
+        && request.resource.data.users[0] < request.resource.data.users[1]
+        && me() in request.resource.data.users
+        && request.resource.data.to in request.resource.data.users
+        && pid == request.resource.data.users[0] + '_' + request.resource.data.users[1]
+        && request.resource.data.names is map
+        && request.resource.data.at == request.time;
+      // Sólo quien la recibe puede aceptarla.
+      allow update: if signedIn()
+        && resource.data.to == me()
+        && resource.data.status == 'pending'
+        && request.resource.data.diff(resource.data).affectedKeys().hasOnly(['status', 'at', 'names'])
+        && request.resource.data.status == 'ok';
+      allow delete: if signedIn() && me() in resource.data.users;
+    }
+
+    // ---------- ranking ----------
+
+    match /runs/{uid} {
+      allow read, delete: if signedIn() && me() == uid;
+    }
+
+    // Una entrada sólo se puede mejorar, nunca empeorar.
+    function validEntry(board, id) {
+      let d = request.resource.data;
+      return d.keys().hasOnly(['t', 'uids', 'names', 'dex', 'shiny', 'lv', 'kills', 'at'])
+        && d.t is int && d.t > 0
+        && d.lv is int && d.kills is int
+        && d.uids is list && me() in d.uids
+        && d.names is list && d.names.size() == d.uids.size()
+        && d.dex is list && d.dex.size() == d.uids.size()
+        && d.shiny is list && d.shiny.size() == d.uids.size()
+        && d.at == request.time
+        && (board.matches('s_.*')
+              ? (d.uids.size() == 1 && id == me())
+              : (d.uids.size() >= 2 && d.uids.size() <= 4 && id == d.uids.join('_')))
+        && (resource == null || d.t > resource.data.t);
+    }
+
+    match /lb/{board}/e/{id} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validEntry(board, id);
+      allow delete: if signedIn() && me() in resource.data.uids;
+    }
+
+    // Resumen con el top 50 de cada tabla (lo que se lee al mirar el ranking).
+    //   top: { id: { t, uids, names, dex, shiny, lv, kills } }
+    //   me:  la fila que añades o mejoras (debe coincidir con tu marca validada,
+    //        escrita en la misma transacción)
+    //   ev:  la fila que sale del top (sólo si tiene menos tiempo que la tuya)
+    // Al borrar la cuenta: me = '' y ev = una fila tuya que se quita.
+    function validTop(board) {
+      let d = request.resource.data;
+      let old = resource == null ? {} : resource.data.top;
+      let changed = d.top.diff(old).affectedKeys();
+      return d.keys().hasOnly(['top', 'me', 'ev'])
+        && d.top is map && d.top.size() <= 50
+        && d.me is string && d.ev is string
+        && (d.me == '' ? removeMine(d, old, changed) : addMine(board, d, old, changed));
+    }
+    function addMine(board, d, old, changed) {
+      let e = getAfter(/databases/$(database)/documents/lb/$(board)/e/$(d.me)).data;
+      let row = d.top[d.me];
+      return me() in e.uids
+        && changed.hasOnly([d.me, d.ev])
+        && row.t == e.t && row.uids == e.uids && row.names == e.names && row.dex == e.dex
+        && (d.ev == '' || (!(d.ev in d.top) && d.ev in old && old[d.ev].t <= e.t));
+    }
+    function removeMine(d, old, changed) {
+      return d.ev in old && me() in old[d.ev].uids && !(d.ev in d.top) && changed.hasOnly([d.ev]);
+    }
+
+    match /lbs/{board} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && validTop(board);
+    }
+
+    // Presencia aproximada: "en línea" si at es de hace menos de unos minutos.
+    match /pres/{uid} {
+      allow read: if signedIn();
+      allow create, update: if signedIn() && me() == uid
+        && request.resource.data.keys().hasOnly(['at', 'room', 'play', 'on'])
+        && request.resource.data.at == request.time
+        && request.resource.data.room is string && request.resource.data.room.size() <= 40
+        && request.resource.data.play is bool && request.resource.data.on is bool;
+      allow delete: if signedIn() && me() == uid;
+    }
+
+    // Invitaciones a una sala: id "para_de". Sólo entre amigos confirmados.
+    match /inv/{id} {
+      allow read: if signedIn() && (resource == null || me() == resource.data.to || me() == resource.data.from);
+      allow create, update: if signedIn()
+        && request.resource.data.keys().hasOnly(['to', 'from', 'room', 'name', 'at'])
+        && request.resource.data.from == me()
+        && id == request.resource.data.to + '_' + me()
+        && request.resource.data.room is string && request.resource.data.room.size() <= 40
+        && request.resource.data.name is string && request.resource.data.name.size() <= 16
+        && request.resource.data.at == request.time
+        && get(/databases/$(database)/documents/friendships/$(request.resource.data.to < me() ? request.resource.data.to + '_' + me() : me() + '_' + request.resource.data.to)).data.status == 'ok';
+      allow delete: if signedIn() && (me() == resource.data.to || me() == resource.data.from);
+    }
+
+    // Para borrar todas tus marcas al borrar la cuenta (consulta de grupo).
+    match /{path=**}/e/{id} {
+      allow read: if signedIn();
+    }
+
+    match /{document=**} {
+      allow read, write: if false;
+    }
+  }
+}

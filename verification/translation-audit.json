@@ -1,0 +1,223 @@
+{
+  "report": {
+    "menu": [
+      "PokéSurvivor"
+    ],
+    "dex": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-0": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-1": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-2": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-3": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-4": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-5": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-6": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-7": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-8": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "dex-9": [
+      "PokéSurvivor",
+      "Tipo"
+    ],
+    "upgrades": [
+      "PokéSurvivor"
+    ],
+    "gacha": [
+      "PokéSurvivor"
+    ],
+    "gacha-0": [
+      "PokéSurvivor"
+    ],
+    "gacha-1": [
+      "PokéSurvivor"
+    ],
+    "gacha-2": [
+      "PokéSurvivor"
+    ],
+    "gacha-3": [
+      "PokéSurvivor"
+    ],
+    "gacha-4": [
+      "PokéSurvivor"
+    ],
+    "gacha-5": [
+      "PokéSurvivor"
+    ],
+    "gacha-6": [
+      "PokéSurvivor"
+    ],
+    "gacha-7": [
+      "PokéSurvivor"
+    ],
+    "gacha-8": [
+      "PokéSurvivor"
+    ],
+    "goals": [
+      "PokéSurvivor"
+    ],
+    "settings-gfx": [
+      "PokéSurvivor"
+    ],
+    "settings-snd": [
+      "PokéSurvivor",
+      "：没有广告，没有内购。Pokémon 及其角色归任天堂、Creatures 和 GAME FREAK 所有；本项目与他们没有隶属关系。",
+      "PMD SpriteCollab 及其艺术家（CC BY-NC 4.0）。",
+      "PokéAPI.",
+      "Pixelify Sans (OFL).",
+      "代码（GitHub）"
+    ],
+    "settings-ctl": [
+      "PokéSurvivor",
+      "Esc"
+    ],
+    "settings-map": [
+      "PokéSurvivor"
+    ],
+    "settings-acc": [
+      "PokéSurvivor"
+    ],
+    "news": [
+      "PokéSurvivor",
+      "Physical and special, controller, Save button and fresh leaderboards",
+      "Physical and special moves, like in the games: every Pokémon has its Attack, Special Attack, Defense and Special Defense. Physical moves use its Attack and special moves its Special Attack: Machamp hits hard with Karate Chop and weakly with Shadow Ball. With moves on its strong side it hits as hard as before. When leveling up, each card says whether the move is physical or special and how well it works with your Pokémon, and the collection shows all its stats.",
+      "Swords Dance and Dragon Dance now raise only (physical) Attack, like in the games, and Nasty Plot arrives, raising Special Attack, learnable by any Pokémon. When leveling up, moves on your Pokémon’s strong side show up twice as often.",
+      "Run summary in the pause screen: each move with its category, the damage it has dealt and its damage per second; your stats with everything you have raised; and your item and the upgrade cards you have.",
+      "Defenses count too (a little): enemies resist your physical moves with their Defense and special moves with their Special Defense, and each enemy hits you with its strong side, which you block with your Defense or Special Defense.",
+      "You can now play with a controller (Xbox, PlayStation, Switch and most USB or Bluetooth controllers): move, switch attacks, pause, pick cards and use every menu, with vibration when you take damage. Set it up in Settings > Controls.",
+      "Collection: search by name or number, a tab with every generation, filters that combine (owned / missing, several rarities at once, shiny, favorites and type) and sorting by number, name, rarity, recently caught or most played. Plus favorites: mark them on each Pokémon’s page; they go with your account, on all your devices.",
+      "New Accessibility tab in Settings with “Manual aim”: your attacks go towards the mouse or wherever you push the controller’s right stick, instead of the nearest enemy. It is off by default.",
+      "Save button at the top right: it uploads your game to the cloud right away. Use it before closing the game or switching devices.",
+      "Level-up, bond and item cards can’t be picked for a moment after they appear (they look dimmed): pressing 1-4 or tapping to switch attacks mid-fight no longer picks a card by accident.",
+      "With a controller you can now select the Pokémon you don’t have yet in the collection, and on mobile the Settings tabs fit in one row that scrolls sideways.",
+      "Your game is saved to the cloud automatically every 10 minutes.",
+      "All-time leaderboard: if you are below rank 1,000, it shows “#1000+” instead of the exact number.",
+      "Big Pokémon (Onix, Gyarados, Wailord, Eternatus, the legendaries...) are now properly playable: they look a bit smaller, while still being among the biggest, and collide like a normal one, so they fit through every corridor and don’t take extra hits because of their size.",
+      "There are at most 3 healers, 3 shielders and 3 summoners at a time.",
+      "Healers and shielders no longer make a boss unkillable: their healing and shields scale with the damage you are dealing to it, and it only gets one shield every 6 seconds.",
+      "Judgment of Arceus: speed has a soft cap (anything above a certain point counts much less) and legendaries run almost as fast as you. After 5 minutes of Judgment, Arceus keeps speeding up, and after 7 its touch takes more and more HP, until it knocks you out in one hit around minute 40.",
+      "Poison still takes a percentage of HP, but against enemies with huge HP (the Judgment legendaries) that percentage is smaller.",
+      "All leaderboards start from scratch (daily, weekly, monthly, yearly and all-time): records from running away from Arceus could no longer be reached.",
+      "Security: we closed a hole that let someone put code in their leaderboard row or profile and make it run in the browser of whoever opened them (some people were sent to a video). Now everything coming from other players is cleaned, the server only accepts what it should, and the browser runs nothing that isn’t part of the game.",
+      "The leaderboard now shows Pokémon in shiny form for players who played with their shiny.",
+      "Required updates",
+      "When an update is required (for example, to fix an important bug), your current run ends after a 10 s notice and the game reloads. You lose nothing: that run’s coins, tickets, records and leaderboard entry are saved as if you had quit.",
+      "Recover your account with Gmail",
+      "If you play with a name and password, you can link your Gmail: if you ever forget your password, sign in with Google and it is the same account. We offer it when you sign in.",
+      "Mobile: you can now place the buttons wherever you want. In Settings > Controls > Place the buttons, drag the attacks (with the item), the pause button and the joystick, which can now also be fixed instead of appearing where you put your finger.",
+      "The weekly and monthly leaderboards start from scratch, like the all-time one: now only runs with the Judgment of Arceus count, and all boards match each other.",
+      "Important: the only official PokéSurvivor website is pokesurvivor.com. The game is and always will be free: if any other website asks you to pay (for tickets, coins or anything else), it isn’t us. You will also see this when signing in and in the Legal notice.",
+      "The game’s code moves to a non-commercial license (PolyForm Noncommercial 1.0.0): you can still study and modify it, but nobody may charge for it.",
+      "Co-op: the game no longer freezes with each player waiting for the other to choose. An item and the level-up cards no longer cover each other, and if the connection drops a message it fixes itself.",
+      "Co-op: after coming back from a rift, players who are not the host can see every enemy again (some used to be invisible, with only their attacks showing).",
+      "Friends: if your phone or computer has the wrong time (or time zone), your friends no longer always show as offline and their invitations reach you.",
+      "Playing on two devices (PC and phone) no longer loses coins or tickets: before, if one had the game open with old data and saved, it erased what you earned on the other. Now both are added up. And when you come back to the game after a while away, it brings in what you got on the other device (Pokémon, shinies...) without reloading.",
+      "Big in-game announcements (a nearby Gholdengo, a swarm...) are always centered now.",
+      "The Judgment of Arceus",
+      "The Judgment of Arceus: at minute 30, Arceus descends from the sky and takes you to the Ruins of Judgment. It is invincible, chases you faster and faster and casts pillars of light, beams and shockwaves; if it touches you, you lose almost half your HP. Every 5 seconds a legendary joins, each with twice the HP and damage of the previous one. How long can you last?",
+      "Three new achievements: The Judgment (reach minute 30), Before the Creator (survive 1 minute against Arceus) and Divine challenge (defeat 3 legendaries against Arceus in a single run).",
+      "New music for the fight against Arceus.",
+      "A button to report suspicious records on the leaderboard (the little flag on each row).",
+      "The all-time leaderboard starts from scratch: now that runs end against Arceus, older records could no longer be reached. The daily, weekly and monthly boards are unchanged.",
+      "Overtime from minute 60 is removed (runs no longer get that far).",
+      "Rifts no longer open from minute 28 on, so the Judgment does not catch you inside one.",
+      "Leaderboard protected against cheating: the server checks that every record was really played. You never lose anything you earn by playing.",
+      "Records over 35 minutes have been removed from the leaderboard: with the Judgment of Arceus they are no longer possible.",
+      "Gacha pulls, new Pokémon and rewards are saved to the cloud right away. If you opened the game on another device or browser and something was missing, open it again where you got it: it comes back on its own.",
+      "Overtime and less random rifts",
+      "Overtime: from minute 60 on, wild Pokémon keep getting stronger (more HP and more damage), faster and faster. Before, with maxed upgrades, some runs never ended; now the best ones will last about an hour and a half.",
+      "The game now updates itself when a new version is out: within 5 seconds if you are in the menu, or after your run if you are playing (without losing anything).",
+      "A \"What's new\" button (this window) with every change to the game.",
+      "Easier to read numbers: 2, 5 and 8 no longer look alike.",
+      "Pick the normal or shiny version of your partner right from the main menu, under it.",
+      "New upgrades for each Pokémon: Critical Hit (+3% critical chance per level, crits deal x1.5 damage), Card reroll (+1 level-up card reroll per run) and Ban (block moves so they never show up in your cards; pick them in Upgrades).",
+      "Move shortcuts (in Upgrades, for each Pokémon): choose which move always goes in each slot, for example Confusion always on 1, for muscle memory.",
+      "Rock Slide deals less damage (21 instead of 26): it defeated almost twice as many as the average move.",
+      "Level-up card rerolls are no longer earned by defeating bosses: you get 1 free per run and can buy more in Upgrades.",
+      "Rift legendaries no longer always drop x10 tickets: they drop one half of the time (they used to always drop 2, which was too many).",
+      "Co-op: if your networks cannot connect to each other, the room says so and keeps retrying, instead of playing laggy through a slow server.",
+      "We moved to new servers so the game can stay free: you may need to sign in again (with the same account and password, or with Google). Your save and your Pokémon are unchanged.",
+      "Gacha: shinies no longer come out as duplicates. If you roll one you already have, you get another of the same rarity that you are missing.",
+      "Less random rifts: every time one does not show up, the next one is more likely (at most 2.5 minutes without a rift).",
+      "Legendaries you have not beaten yet show up 4 times as often in rifts.",
+      "Healers heal more the harder you hit, but with diminishing returns and a cap (2.5x at most).",
+      "Stronger melee attacks: while one is active you take 25% less damage, and they reach 25% further and deal 20% more damage.",
+      "Co-op: choosing which held item to keep now pauses the run for everyone (it used to keep going and you got hit while choosing).",
+      "Co-op: while someone is choosing a fusion, the run pauses for everyone.",
+      "Co-op: if the host switches tabs or their game stalls, the run pauses for everyone until they are back.",
+      "Runs shorter than 1 minute no longer count for the leaderboard.",
+      "Removed broken records from the leaderboard caused by the minute 84 bug (the clock kept running while the game was frozen) and a few impossible ones. If you had one, your next run counts again.",
+      "iPhone (Safari and Chrome): sometimes you could not switch moves by tapping the icons, especially with your other finger on the joystick. Buttons also sit above the home bar now.",
+      "In runs longer than 84 minutes the screen went black, the game froze or you kept levelling up forever. Now you can play for as long as you survive.",
+      "If the game ever crashes, the run ends by itself and is saved (time, defeated, records and leaderboard) instead of being lost.",
+      "Very long runs were sometimes flagged as cheating and did not count for the leaderboard.",
+      "Co-op: if the host switched tabs, enemies stood still and everyone else got a free advantage.",
+      "iPhone: holding your finger on the joystick brought up \"Copy / Select all\".",
+      "iPhone: fullscreen sometimes did not show up. Now the button explains how to get it (Share and \"Add to Home Screen\").",
+      "Bonds",
+      "Bonds: defeating a legendary lets you fuse moves that fire at the same time from a single slot (up to 4).",
+      "A button to reroll the level-up cards.",
+      "More rifts.",
+      "Weaker psychic moves and healers.",
+      "Level-up card upgrades (speed, cooldown, experience, magnet, armor and power) can only be taken a limited number of times.",
+      "On mobile, the Pokémon details show alongside; logging in is faster and the x10 gacha can be closed.",
+      "Black screen in runs longer than an hour because image memory filled up.",
+      "Tickets were lost if the tab closed before the run ended: now they are saved as soon as you pick them up.",
+      "An upgrade bought right after saving was charged but not applied.",
+      "The game froze forever if something went wrong mid-run.",
+      "More challenge",
+      "Bosses and legendaries with 4 telegraphed attacks that get enraged at half health.",
+      "12 new moves and 8 new ways to attack: boomerang, chain, mines, meteors, turret, dash, trail and spray.",
+      "Mid-run events (single-type hordes, golden hour, lost Pokémon) and Meowth and Gholdengo running away loaded with coins.",
+      "Statues for big Pokémon.",
+      "Harder: fewer but tougher enemies.",
+      "Levelling up is slower, tickets are rarer and bosses drop a x10 ticket one time in three.",
+      "Faster loading.",
+      "Straggling enemies vanished in front of you: now only off-screen.",
+      "Menus and screens overlapped the top bar.",
+      "Mobile and English",
+      "Play on phones and tablets with a touch joystick, and install it as an app.",
+      "The game in English and Spanish.",
+      "Settings screen with automatic graphics quality.",
+      "Fewer but stronger enemies on screen.",
+      "Giga Drain becomes Grass Knot (no more healing).",
+      "Missions, rifts and co-op",
+      "Daily and weekly missions, achievements with medals and titles, and a public profile.",
+      "Held items, move evolutions and enemies that heal, shield, summon or explode.",
+      "Rifts leading to 18 legendary arenas, one per type, and weather that changes the fight.",
+      "Co-op with your friends list and leaderboards.",
+      "Upgrades for each Pokémon, a slot-machine ticket gacha and a type chart.",
+      "Camera further out and enemies that walk around obstacles.",
+      "First version",
+      "First public version of PokéSurvivor."
+    ]
+  },
+  "errors": []
+}

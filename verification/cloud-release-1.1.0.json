@@ -1,0 +1,17 @@
+{
+  "file": "dist/PokeSurvivor-ChineseMap-1.1.0.apk",
+  "sha256": "c9f0c60c746e7649cb2c0daf4606f1083b4645ebca8149c0e97dd1aff9b35e09",
+  "testedBundle": "41518afaae73fb48e13ee85a622485ea56ac6717547b69cbe9a6dd8780835f59",
+  "resource": {
+    "name": "resources.arsc",
+    "method": 0,
+    "size": 1544,
+    "compressedSize": 1544,
+    "crc": 2830981161,
+    "time": 16384,
+    "date": 33,
+    "dataOffset": 47332
+  },
+  "realAccountTested": false,
+  "realAndroidDeviceTested": false
+}
