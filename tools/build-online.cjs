@@ -6,7 +6,7 @@ const dev=read('source/dev.html');
 const map=dev.slice(dev.indexOf('<section id="scr-map"'),dev.indexOf('<!-- scripts:begin -->'));
 const modules=['js/core/audio.js'].map(p=>`/* ${p} */
 `+read('source/'+p));
-modules.push(read('source/js/ui/map-ui.js'),read('source/online/game-adapter.js'),read('source/online/run-mode.js'),read('source/online/dex-layout.js'),read('source/online/attack-button.js'),read('source/online/cloud-sync.js'),read('source/js/core/mobile-layout.js'));
+modules.push(read('source/js/ui/map-ui.js'),read('source/online/game-adapter.js'),read('source/online/run-mode.js'),read('source/online/dex-layout.js'),read('source/online/dex-extras.js'),read('source/online/attack-button.js'),read('source/online/cloud-sync.js'),read('source/js/core/mobile-layout.js'));
 // Our own UI strings (map, pause button) for the official i18n: Spanish keys.
 const labels=require('./map-labels.cjs');
 const labelsZh=Object.fromEntries(Object.entries(labels).map(([k,v])=>[k,v[0]])),labelsEn=Object.fromEntries(Object.entries(labels).map(([k,v])=>[k,v[1]]));
@@ -87,7 +87,7 @@ const install=`function install(G,recover) {
     if(bar){const b=document.createElement('button');b.id='ps-go-online';b.className='btn small gold';b.setAttribute('translate','no');b.textContent='返回在线版';b.onclick=()=>{try{G.DB.commit(true);}catch(_){}AndroidApp.openOnline();};bar.prepend(b);}
   }
   const observer=new MutationObserver(()=>{if(document.querySelector('#scr-settings:not(.hidden)')){addOfflineEntry();}});observer.observe(document.getElementById('set-body'),{childList:true});
-  window.__PSOnlineInstalled={version:'1.4.6',origin:location.origin,officialDBUnchanged:G.DB===officialDB,officialConfigUnchanged:G.FIREBASE_CONFIG===officialConfig,officialFlowUnchanged:G.Flow===officialFlow,officialGameUnchanged:G.Game===officialGame&&G.Game.startRun===officialStart,judgment:!!G.Judgment};
+  window.__PSOnlineInstalled={version:'1.4.7',origin:location.origin,officialDBUnchanged:G.DB===officialDB,officialConfigUnchanged:G.FIREBASE_CONFIG===officialConfig,officialFlowUnchanged:G.Flow===officialFlow,officialGameUnchanged:G.Game===officialGame&&G.Game.startRun===officialStart,judgment:!!G.Judgment};
 }
 `;
 // Prototype interception is temporary and is removed as soon as the official

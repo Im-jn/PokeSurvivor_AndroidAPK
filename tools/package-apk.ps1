@@ -27,9 +27,9 @@ if (-not (Test-Path -LiteralPath signing/widemap.p12)) {
 if ($LASTEXITCODE -ne 0) { throw 'APK signing failed' }
 node tools/apk-compat.cjs $unsigned $original
 if ($LASTEXITCODE -ne 0) { throw 'Android packaging compatibility check failed' }
-Move-Item -LiteralPath $unsigned -Destination (Join-Path $PWD 'dist/PokeSurvivor-1.4.6.apk') -Force
-$apk = Join-Path $PWD 'dist/PokeSurvivor-1.4.6.apk'
+Move-Item -LiteralPath $unsigned -Destination (Join-Path $PWD 'dist/PokeSurvivor-1.4.7.apk') -Force
+$apk = Join-Path $PWD 'dist/PokeSurvivor-1.4.7.apk'
 & $java -jar tools/uber-apk-signer.jar -a $apk -y
 if ($LASTEXITCODE -ne 0) { throw 'APK verification failed' }
 $hash = (Get-FileHash -LiteralPath $apk -Algorithm SHA256).Hash.ToLower()
-[IO.File]::WriteAllText((Join-Path $PWD 'dist/SHA256.txt'),($hash+'  PokeSurvivor-1.4.6.apk'+[Environment]::NewLine))
+[IO.File]::WriteAllText((Join-Path $PWD 'dist/SHA256.txt'),($hash+'  PokeSurvivor-1.4.7.apk'+[Environment]::NewLine))

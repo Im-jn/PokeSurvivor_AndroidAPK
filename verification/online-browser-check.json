@@ -4,7 +4,7 @@
   "officialGamePreserved": true,
   "serviceWorkerReplaced": true,
   "endless": {
-    "time": 1802.5820999999905,
+    "time": 1802.616866666659,
     "active": false,
     "cinematic": false,
     "at": null,
@@ -17,18 +17,18 @@
     "error": null
   },
   "judgment": {
-    "time": 1800.0158999999996,
+    "time": 1800.016633333333,
     "active": true,
     "cinematic": true,
     "debug": {
       "base": 0,
       "single": 0,
-      "samples": 0
+      "samples": 1
     }
   },
   "mapState": {
     "knownTiles": 4096,
-    "resources": 75
+    "resources": 125
   },
   "guestGameAndMapTested": true,
   "realAccountTested": false,
@@ -44,7 +44,7 @@
     "vendor/firebase/firebase-database-compat.js"
   ],
   "requestedHosts": {
-    "pokesurvivor.com": 432,
+    "pokesurvivor.com": 457,
     "www.gstatic.com": 4,
     "identitytoolkit.googleapis.com": 1
   },

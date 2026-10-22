@@ -1109,6 +1109,21 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
 .ps-lay-atk { border-color:rgba(255,138,107,.8); }
 .ps-lay-atk .knob { background:rgba(255,107,74,.85); border-color:#8a1f10; }
 #ps-lay-atk { justify-content:center; align-items:center; gap:6px; margin:6px 0 0; }
+/* Move info popup (tap a move icon in the Pok\xE9dex). */
+#scr-dex .move-icons span[title] { cursor:pointer; }
+#ps-move-tip { position:fixed; z-index:80; max-width:min(320px,calc(100vw - 16px)); padding:8px 10px; font-size:13px; line-height:1.35; pointer-events:auto; }
+#ps-move-tip[hidden] { display:none; }
+#ps-move-tip .ps-tip-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:4px; }
+#ps-move-tip .ps-tip-head b { font-size:15px; }
+#ps-move-tip .ps-tip-type, #ps-move-tip .ps-tip-cat { padding:1px 7px; border-radius:9px; font-size:11px; color:#fff; text-shadow:1px 1px 0 rgba(0,0,0,.4); }
+#ps-move-tip .ps-tip-cat.ph { background:#c8553d; }
+#ps-move-tip .ps-tip-cat.sp { background:#6a5acd; }
+#ps-move-tip .ps-tip-stats { color:var(--gold); font-size:12px; margin-bottom:2px; }
+#ps-move-tip p { margin:0; color:var(--muted); }
+/* Pok\xE9dex page: partner + upgrades side by side. */
+#dex-detail .ps-dex-action { gap:6px; }
+@media (max-height:600px) and (min-width:600px) { #dex-detail .ps-dex-action:not(:empty) { display:flex; } #dex-detail .ps-dex-action .btn { flex:1; } }
+#ps-upg-dex { margin-left:8px; }
 
 /* Online-only overrides; responsive layout is shared offline. */\r
 `;
@@ -2603,6 +2618,202 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
   })();
   ;
   (() => {
+    const dexScreen = document.getElementById("scr-dex"), detail = document.getElementById("dex-detail"), upgScreen = document.getElementById("scr-upgrades");
+    if (!dexScreen || !detail || !G.Moves) return;
+    const TEXT = {
+      zh: { upgrades: "\u5F3A\u5316", toDex: "\u67E5\u770B\u56FE\u9274", power: "\u4F24\u5BB3", cd: "\u51B7\u5374", sec: "\u79D2", notOwned: "\u8FD8\u6CA1\u6709\u8FD9\u53EA\u5B9D\u53EF\u68A6\uFF0C\u65E0\u6CD5\u5F3A\u5316\u3002" },
+      en: { upgrades: "Upgrades", toDex: "View in Pok\xE9dex", power: "Damage", cd: "Cooldown", sec: "s", notOwned: "You do not have this Pok\xE9mon yet." },
+      es: { upgrades: "Mejoras", toDex: "Ver en la Pok\xE9dex", power: "Da\xF1o", cd: "Recarga", sec: "s", notOwned: "Todav\xEDa no tienes este Pok\xE9mon." }
+    };
+    const text = () => {
+      const l = String(G.I18n && G.I18n.lang || "");
+      return /^zh/.test(l) ? TEXT.zh : l === "es" ? TEXT.es : TEXT.en;
+    };
+    const T = (s, ns) => {
+      try {
+        return G.T(s, ns);
+      } catch (_) {
+        return s;
+      }
+    };
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    let byName = null, byNameLang = "";
+    function moveFor(span) {
+      const lang = G.I18n && G.I18n.lang;
+      if (!byName || byNameLang !== lang) {
+        byName = /* @__PURE__ */ new Map();
+        byNameLang = lang;
+        for (const m of Object.values(G.Moves.BY_ID)) {
+          byName.set(T(m.name, "move"), m);
+          byName.set(m.name, m);
+        }
+      }
+      return byName.get(span.getAttribute("title")) || byName.get(span.dataset.psMove);
+    }
+    const tip = document.createElement("div");
+    tip.id = "ps-move-tip";
+    tip.className = "box";
+    tip.setAttribute("translate", "no");
+    tip.hidden = true;
+    document.body.appendChild(tip);
+    let tipFor = null;
+    function hideTip() {
+      tip.hidden = true;
+      tipFor = null;
+    }
+    function showTip(span, m) {
+      const t = text(), color = G.U && G.U.TYPE_COLOR && G.U.TYPE_COLOR[m.type] || "#888";
+      const typeName = T(G.U && G.U.TYPE_NAME && G.U.TYPE_NAME[m.type] || m.type);
+      const cat = m.cat && G.Stats && G.Stats.NAME ? T(G.Stats.NAME[m.cat]) : "";
+      const stats = [m.dmg ? t.power + " " + m.dmg : "", m.cd ? t.cd + " " + m.cd + " " + t.sec : ""].filter(Boolean).join(" \xB7 ");
+      tip.innerHTML = `<div class="ps-tip-head"><b>${esc(T(m.name, "move"))}</b><span class="ps-tip-type" style="background:${esc(color)}">${esc(typeName)}</span>${cat ? `<span class="ps-tip-cat ${m.cat === "special" ? "sp" : "ph"}">${esc(cat)}</span>` : ""}</div>` + (stats ? `<div class="ps-tip-stats">${esc(stats)}</div>` : "") + `<p>${esc(T(m.desc || ""))}</p>`;
+      tip.hidden = false;
+      tipFor = span;
+      const r = span.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+      let x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8), y = r.top - h - 8;
+      if (y < 8) y = Math.min(innerHeight - h - 8, r.bottom + 8);
+      tip.style.left = x + "px";
+      tip.style.top = y + "px";
+    }
+    document.addEventListener("click", (event) => {
+      const span = event.target.closest && event.target.closest("#scr-dex .move-icons span[title]");
+      if (!span) {
+        if (!tip.hidden && !tip.contains(event.target)) hideTip();
+        return;
+      }
+      const m = moveFor(span);
+      if (!m) return;
+      event.stopPropagation();
+      if (tipFor === span) hideTip();
+      else showTip(span, m);
+    }, true);
+    addEventListener("resize", hideTip);
+    detail.addEventListener("scroll", hideTip, true);
+    new MutationObserver(() => {
+      if (dexScreen.classList.contains("hidden")) hideTip();
+    }).observe(dexScreen, { attributes: true, attributeFilter: ["class"] });
+    const currentDex = () => {
+      const head = detail.querySelector(".center");
+      const m = head && head.textContent.match(/\b(\d{3,4})\b/);
+      return m ? +m[1] : 0;
+    };
+    const owned = (id) => {
+      try {
+        return !!G.DB.owns(id);
+      } catch (_) {
+        return false;
+      }
+    };
+    const back = (screen) => {
+      if (!screen || screen.classList.contains("hidden")) return;
+      const b = screen.querySelector("[data-back]");
+      if (b) b.click();
+    };
+    const menuGo = (go) => {
+      const b = document.querySelector('#scr-menu [data-go="' + go + '"]');
+      if (b) b.click();
+    };
+    let fromDex = 0;
+    function openUpgrades(id) {
+      if (!owned(id)) {
+        try {
+          G.UI.toast(text().notOwned, 2500);
+        } catch (_) {
+        }
+        return;
+      }
+      fromDex = id;
+      back(dexScreen);
+      menuGo("upgrades");
+      const select = document.getElementById("upg-mon");
+      if (select && [...select.options].some((o) => +o.value === id)) {
+        select.value = String(id);
+        select.dispatchEvent(new Event("change", { bubbles: true }));
+      }
+    }
+    function openDex(id) {
+      back(upgScreen);
+      menuGo("dex");
+      const find = () => [...document.querySelectorAll("#dex-grid > .cell")].find((c) => {
+        const n = c.querySelector(".no");
+        return n && +n.textContent === id;
+      });
+      let cell = find();
+      if (!cell) {
+        const all = document.querySelector("#dex-gens .gen-tab");
+        if (all) {
+          all.click();
+          cell = find();
+        }
+      }
+      if (!cell) {
+        const q = document.getElementById("dex-q");
+        if (q) {
+          q.value = String(id);
+          q.dispatchEvent(new Event("input", { bubbles: true }));
+          cell = find();
+        }
+      }
+      if (cell) {
+        cell.click();
+        cell.scrollIntoView({ block: "nearest" });
+      }
+    }
+    function addUpgradesButton() {
+      const action = detail.querySelector(".ps-dex-action") || detail;
+      const id = currentDex();
+      let button = document.getElementById("ps-dex-upgrades");
+      if (!id || !owned(id)) {
+        if (button) button.remove();
+        return;
+      }
+      if (!button) {
+        button = document.createElement("button");
+        button.id = "ps-dex-upgrades";
+        button.type = "button";
+        button.className = "btn grow";
+        button.setAttribute("translate", "no");
+        button.addEventListener("click", () => openUpgrades(currentDex()));
+      }
+      button.textContent = text().upgrades;
+      if (button.parentNode !== action) action.appendChild(button);
+    }
+    new MutationObserver(() => {
+      if (!document.getElementById("ps-dex-upgrades") || document.getElementById("ps-dex-upgrades").parentNode !== (detail.querySelector(".ps-dex-action") || detail)) addUpgradesButton();
+    }).observe(detail, { childList: true, subtree: true });
+    addUpgradesButton();
+    if (upgScreen) {
+      const row = upgScreen.querySelector("#upg-mon") && upgScreen.querySelector("#upg-mon").parentNode;
+      if (row && !document.getElementById("ps-upg-dex")) {
+        const b = document.createElement("button");
+        b.id = "ps-upg-dex";
+        b.type = "button";
+        b.className = "btn small";
+        b.setAttribute("translate", "no");
+        b.textContent = text().toDex;
+        b.addEventListener("click", () => {
+          const v = +document.getElementById("upg-mon").value;
+          fromDex = 0;
+          openDex(v);
+        });
+        row.appendChild(b);
+        new MutationObserver(() => {
+          b.textContent = text().toDex;
+        }).observe(upgScreen, { attributes: true, attributeFilter: ["class"] });
+      }
+      upgScreen.addEventListener("click", (event) => {
+        if (!fromDex || !event.target.closest("[data-back]")) return;
+        const v = +document.getElementById("upg-mon").value || fromDex;
+        fromDex = 0;
+        setTimeout(() => {
+          if (document.querySelector("#scr-menu:not(.hidden)")) openDex(v);
+        }, 0);
+      });
+    }
+    G.DexExtras = { openUpgrades, openDex, currentDex };
+  })();
+  ;
+  (() => {
     const Player = G.Player, Touch = G.Touch, canvas = document.getElementById("game");
     if (!Player || !Touch || !canvas || typeof Player.prototype.update !== "function") return;
     const STICK_KEY = "ps.attackStick";
@@ -2847,6 +3058,31 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
         return result;
       };
     }
+    const taps = /* @__PURE__ */ new Map();
+    let suppress = null;
+    addEventListener("pointerdown", (event) => {
+      if (event.pointerType !== "touch" || event.target === canvas || !(move || attack || taps.size)) return;
+      taps.set(event.pointerId, { el: event.target, x: event.clientX, y: event.clientY });
+    }, true);
+    addEventListener("pointerup", (event) => {
+      const t = taps.get(event.pointerId);
+      if (!t) return;
+      taps.delete(event.pointerId);
+      if (Math.hypot(event.clientX - t.x, event.clientY - t.y) > 14 || !t.el.isConnected) return;
+      const under = document.elementFromPoint(event.clientX, event.clientY);
+      if (!under || !(t.el === under || t.el.contains(under) || under.contains(t.el))) return;
+      suppress = { el: t.el, until: performance.now() + 450 };
+      t.el.click();
+    }, true);
+    addEventListener("pointercancel", (event) => taps.delete(event.pointerId), true);
+    addEventListener("click", (event) => {
+      if (!suppress || !event.isTrusted || performance.now() > suppress.until) return;
+      if (suppress.el === event.target || suppress.el.contains(event.target) || event.target.contains(suppress.el)) {
+        event.preventDefault();
+        event.stopImmediatePropagation();
+        suppress = null;
+      }
+    }, true);
     if (G.LayoutUI && typeof G.LayoutUI.open === "function") {
       const open2 = G.LayoutUI.open;
       let draft = null;
@@ -3182,7 +3418,7 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
     }
   });
   observer.observe(document.getElementById("set-body"), { childList: true });
-  window.__PSOnlineInstalled = { version: "1.4.6", origin: location.origin, officialDBUnchanged: G.DB === officialDB, officialConfigUnchanged: G.FIREBASE_CONFIG === officialConfig, officialFlowUnchanged: G.Flow === officialFlow, officialGameUnchanged: G.Game === officialGame && G.Game.startRun === officialStart, judgment: !!G.Judgment };
+  window.__PSOnlineInstalled = { version: "1.4.7", origin: location.origin, officialDBUnchanged: G.DB === officialDB, officialConfigUnchanged: G.FIREBASE_CONFIG === officialConfig, officialFlowUnchanged: G.Flow === officialFlow, officialGameUnchanged: G.Game === officialGame && G.Game.startRun === officialStart, judgment: !!G.Judgment };
 });
 var prior=Object.getOwnPropertyDescriptor(Object.prototype,'Game');
 var captured=false;

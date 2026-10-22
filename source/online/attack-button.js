@@ -174,6 +174,30 @@
   }
 
 
+  // ---------- taps on menus while a stick is held ----------
+  // Browsers do not turn a tap into a "click" while another finger touches
+  // the screen, so the level-up cards (and any menu button) could not be
+  // picked without first letting go of the movement stick. Do it ourselves.
+  const taps=new Map();let suppress=null;
+  addEventListener('pointerdown',event=>{
+    if(event.pointerType!=='touch'||event.target===canvas||!(move||attack||taps.size))return;
+    taps.set(event.pointerId,{el:event.target,x:event.clientX,y:event.clientY});
+  },true);
+  addEventListener('pointerup',event=>{
+    const t=taps.get(event.pointerId);if(!t)return;taps.delete(event.pointerId);
+    if(Math.hypot(event.clientX-t.x,event.clientY-t.y)>14||!t.el.isConnected)return;
+    const under=document.elementFromPoint(event.clientX,event.clientY);
+    if(!under||!(t.el===under||t.el.contains(under)||under.contains(t.el)))return;
+    suppress={el:t.el,until:performance.now()+450};
+    t.el.click();
+  },true);
+  addEventListener('pointercancel',event=>taps.delete(event.pointerId),true);
+  // If the browser does send its own click as well, keep only one.
+  addEventListener('click',event=>{
+    if(!suppress||!event.isTrusted||performance.now()>suppress.until)return;
+    if(suppress.el===event.target||suppress.el.contains(event.target)||event.target.contains(suppress.el)){event.preventDefault();event.stopImmediatePropagation();suppress=null;}
+  },true);
+
   // ---------- layout editor: attack stick floating / fixed + position ----------
   if(G.LayoutUI&&typeof G.LayoutUI.open==='function'){
     const open=G.LayoutUI.open;

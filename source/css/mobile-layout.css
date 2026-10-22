@@ -144,3 +144,18 @@
 .ps-lay-atk { border-color:rgba(255,138,107,.8); }
 .ps-lay-atk .knob { background:rgba(255,107,74,.85); border-color:#8a1f10; }
 #ps-lay-atk { justify-content:center; align-items:center; gap:6px; margin:6px 0 0; }
+/* Move info popup (tap a move icon in the Pokédex). */
+#scr-dex .move-icons span[title] { cursor:pointer; }
+#ps-move-tip { position:fixed; z-index:80; max-width:min(320px,calc(100vw - 16px)); padding:8px 10px; font-size:13px; line-height:1.35; pointer-events:auto; }
+#ps-move-tip[hidden] { display:none; }
+#ps-move-tip .ps-tip-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:4px; }
+#ps-move-tip .ps-tip-head b { font-size:15px; }
+#ps-move-tip .ps-tip-type, #ps-move-tip .ps-tip-cat { padding:1px 7px; border-radius:9px; font-size:11px; color:#fff; text-shadow:1px 1px 0 rgba(0,0,0,.4); }
+#ps-move-tip .ps-tip-cat.ph { background:#c8553d; }
+#ps-move-tip .ps-tip-cat.sp { background:#6a5acd; }
+#ps-move-tip .ps-tip-stats { color:var(--gold); font-size:12px; margin-bottom:2px; }
+#ps-move-tip p { margin:0; color:var(--muted); }
+/* Pokédex page: partner + upgrades side by side. */
+#dex-detail .ps-dex-action { gap:6px; }
+@media (max-height:600px) and (min-width:600px) { #dex-detail .ps-dex-action:not(:empty) { display:flex; } #dex-detail .ps-dex-action .btn { flex:1; } }
+#ps-upg-dex { margin-left:8px; }
