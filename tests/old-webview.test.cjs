@@ -31,3 +31,9 @@ test('APK serves the bundled official build only for the exact same version',()=
   const main=fs.readFileSync(path.join(root,'android/smali/com/john/pokesurvivor/MainActivity.smali'),'utf8');
   assert.match(main,/const-wide\/16 v3, 0x61a8/,'25 s launch deadline');
 });
+test('a lost WebView renderer restarts the app instead of closing it',()=>{
+  const client=fs.readFileSync(path.join(root,'android/smali/com/john/pokesurvivor/OnlineWebViewClient.smali'),'utf8');
+  const main=fs.readFileSync(path.join(root,'android/smali/com/john/pokesurvivor/MainActivity.smali'),'utf8');
+  assert.match(client,/onRenderProcessGone\(Landroid\/webkit\/WebView;Landroid\/webkit\/RenderProcessGoneDetail;\)Z[\s\S]*?restartAfterRendererGone[\s\S]*?const\/4 v0, 0x1\s+return v0/);
+  assert.match(main,/restartAfterRendererGone\(\)V[\s\S]*?WebView;->destroy\(\)V[\s\S]*?0x4e20[\s\S]*?startActivity/);
+});

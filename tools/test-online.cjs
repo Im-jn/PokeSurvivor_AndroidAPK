@@ -18,7 +18,13 @@ const root=path.resolve(__dirname,'..');
   await page.addInitScript(()=>{window.AndroidApp={getCutoutInsets:()=> '96,0,0,0,2',openOffline:()=>{window.__offlineRequested=true;},openOnline(){},exit(){}};});
   await page.addInitScript(()=>{window.ResizeObserver=undefined;});
   await page.route('https://pokesurvivor.com/js/app.min.js*',async route=>{
-   if(new URL(route.request().url()).searchParams.get('__ps_original')==='1')return route.continue();
+   const u=new URL(route.request().url());
+   if(u.searchParams.get('__ps_original')==='1'){
+     // The APK serves its patched copy of the very same official build.
+     const item=staticResources[u.origin+u.pathname+'?v='+u.searchParams.get('v')];
+     if(item){localHits.push(item.file);return route.fulfill({status:200,contentType:item.mime,body:fs.readFileSync(path.join(root,'source',item.file))});}
+     return route.continue();
+   }
    await route.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync(path.join(root,'source/online/client-loader.js'),'utf8')});
   });
   // Mirror the native /sw.js replacement (service workers bypass the page interceptor).

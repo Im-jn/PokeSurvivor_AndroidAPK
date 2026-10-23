@@ -26,7 +26,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "9c81bc64df"
+    const-string v2, "f9fe33f52c"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v1
@@ -37,7 +37,7 @@
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v1
-    const-string v2, "www/vendor/official/app.min.js"
+    const-string v2, "www/js/official-app.js"
     const-string v3, "application/javascript"
     goto :serve
     :asset_v1
@@ -53,7 +53,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "7ec35e9cc4"
+    const-string v2, "c3b80e4a12"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v2
@@ -73,7 +73,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "23650f5e5d"
+    const-string v2, "7d5654e0c1"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v3
@@ -93,7 +93,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "23650f5e5d"
+    const-string v2, "7d5654e0c1"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v4
@@ -113,7 +113,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "23650f5e5d"
+    const-string v2, "7d5654e0c1"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v5
@@ -133,7 +133,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "23650f5e5d"
+    const-string v2, "7d5654e0c1"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v6
@@ -153,7 +153,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "23650f5e5d"
+    const-string v2, "7d5654e0c1"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v7
@@ -173,7 +173,7 @@
     const-string v2, "v"
     invoke-virtual {p1, v2}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v4
-    const-string v2, "23650f5e5d"
+    const-string v2, "7d5654e0c1"
     invoke-virtual {v2, v4}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v5
     if-eqz v5, :asset_v8

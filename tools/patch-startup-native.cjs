@@ -49,6 +49,56 @@ edit('MainActivity',s=>{
  if(!s.includes('const-wide/16 v3, 0x61a8')||!s.includes('invoke-virtual {p0, v0}, Lcom/john/pokesurvivor/MainActivity;->openAppPage'))throw Error('MainActivity launch deadline not applied');
  return s;
 });
+// WebView renderer killed (low memory) or crashed mid-run: without handling
+// onRenderProcessGone Android closes the whole app. Restart the activity
+// instead; the run's rewards are restored from the JS checkpoint.
+edit('MainActivity',s=>s.includes('.method public restartAfterRendererGone()V')?s:s.replace('.field private webView:Landroid/webkit/WebView;','.field private webView:Landroid/webkit/WebView;\n\n.field private static lastRendererRestart:J')+`
+.method public restartAfterRendererGone()V
+    .locals 6
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity;->webView:Landroid/webkit/WebView;
+    if-eqz v0, :restart
+    invoke-virtual {v0}, Landroid/webkit/WebView;->getParent()Landroid/view/ViewParent;
+    move-result-object v1
+    instance-of v2, v1, Landroid/view/ViewGroup;
+    if-eqz v2, :destroy
+    check-cast v1, Landroid/view/ViewGroup;
+    invoke-virtual {v1, v0}, Landroid/view/ViewGroup;->removeView(Landroid/view/View;)V
+    :destroy
+    invoke-virtual {v0}, Landroid/webkit/WebView;->destroy()V
+    const/4 v0, 0x0
+    iput-object v0, p0, Lcom/john/pokesurvivor/MainActivity;->webView:Landroid/webkit/WebView;
+    :restart
+    # Two renderer losses within 20 s: stop restarting (avoid a restart loop).
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v2
+    sget-wide v4, Lcom/john/pokesurvivor/MainActivity;->lastRendererRestart:J
+    sput-wide v2, Lcom/john/pokesurvivor/MainActivity;->lastRendererRestart:J
+    sub-long/2addr v2, v4
+    const-wide/16 v4, 0x4e20
+    cmp-long v0, v2, v4
+    if-gez v0, :fresh
+    invoke-virtual {p0}, Lcom/john/pokesurvivor/MainActivity;->finish()V
+    return-void
+    :fresh
+    new-instance v0, Landroid/content/Intent;
+    const-class v1, Lcom/john/pokesurvivor/MainActivity;
+    invoke-direct {v0, p0, v1}, Landroid/content/Intent;-><init>(Landroid/content/Context;Ljava/lang/Class;)V
+    const v1, 0x10008000
+    invoke-virtual {v0, v1}, Landroid/content/Intent;->addFlags(I)Landroid/content/Intent;
+    invoke-virtual {p0, v0}, Lcom/john/pokesurvivor/MainActivity;->startActivity(Landroid/content/Intent;)V
+    invoke-virtual {p0}, Lcom/john/pokesurvivor/MainActivity;->finish()V
+    return-void
+.end method
+`);
+edit('OnlineWebViewClient',s=>s.includes('.method public onRenderProcessGone(')?s:s+`
+.method public onRenderProcessGone(Landroid/webkit/WebView;Landroid/webkit/RenderProcessGoneDetail;)Z
+    .locals 1
+    iget-object v0, p0, Lcom/john/pokesurvivor/OnlineWebViewClient;->activity:Lcom/john/pokesurvivor/MainActivity;
+    invoke-virtual {v0}, Lcom/john/pokesurvivor/MainActivity;->restartAfterRendererGone()V
+    const/4 v0, 0x1
+    return v0
+.end method
+`);
 edit('MainActivity$1',s=>s.includes('.method public startupReady()')?s:s+`
 .method public startupReady()V
     .locals 2

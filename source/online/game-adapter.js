@@ -1,14 +1,34 @@
 // Add features to the current client. Never replace its game loop, world or HUD.
 (() => {
   const game=G.Game, world=G.World, hud=G.HUD;
-  const terrain=new Map(), props=new Map(), gone=new Set(), predicted=new Map();
+  // Tile (x,y) -> one small integer (a V8 small int, no string per tile).
+  const tileKey=(x,y)=>((x+16384)&32767)*32768+((y+16384)&32767);
+  // One byte per tile in 64×64 blocks, least recently written blocks dropped first.
+  function TileBytes(maxBlocks){
+    const blocks=new Map();let lastKey=-1,last=null;
+    return {
+      get(x,y){const b=blocks.get(tileKey(x>>6,y>>6));return b?b[(y&63)*64+(x&63)]:0;},
+      set(x,y,v){
+        const k=tileKey(x>>6,y>>6);let b=k===lastKey?last:blocks.get(k);
+        if(!b){if(blocks.size>=maxBlocks)blocks.delete(blocks.keys().next().value);b=new Uint8Array(4096);}
+        if(k!==lastKey){blocks.delete(k);blocks.set(k,b);lastKey=k;last=b;}
+        b[(y&63)*64+(x&63)]=v;
+      },
+      clear(){blocks.clear();lastKey=-1;last=null;},
+    };
+  }
+  // Seen terrain: kind+1 (0 = not seen), 256 blocks = 1 MB, ~1M tiles.
+  // Predicted: 1+terrain, +4 when the tile has a prop (specs), 0 = not computed.
+  const terrain=TileBytes(256), predicted=TileBytes(64), specs=new Map(), props=new Map(), gone=new Set();
   let sampledAt=0, seed=1;
-  const clear=()=>{terrain.clear();props.clear();gone.clear();predicted.clear();sampledAt=0;};
+  const clearPredicted=()=>{predicted.clear();specs.clear();};
+  const clear=()=>{terrain.clear();props.clear();gone.clear();clearPredicted();sampledAt=0;};
   const reset=world.reset;
   world.reset=function(s,...rest){seed=(s|0)||1;clear();return reset.call(this,s,...rest);};
   for(const key of ['setBiome','setArena']){
-    const original=world[key];world[key]=function(...args){if(key==='setArena')predicted.clear();return original.apply(this,args);};
+    const original=world[key];world[key]=function(...args){if(key==='setArena')clearPredicted();return original.apply(this,args);};
   }
+  // Caps keep the map's memory small: Android kills WebViews that use too much.
   // Pure copy of the official generator (terrain + props, same constants and
   // hash). Never calls the live World: generating far chunks there would
   // allocate prop IDs and could desynchronize co-op games.
@@ -54,17 +74,16 @@
       sampledAt=performance.now();
       const x0=Math.floor(cam.left()/32),y0=Math.floor(cam.top()/32);
       const x1=Math.ceil((cam.left()+cam.w)/32),y1=Math.ceil((cam.top()+cam.h)/32);
-      for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)terrain.set(x+','+y,({floor:0,wall:1,liquid:2})[world.kindAt(x*32+16,y*32+16)]??3);
+      for(let y=y0;y<y1;y++)for(let x=x0;x<x1;x++)terrain.set(x,y,1+(({floor:0,wall:1,liquid:2})[world.kindAt(x*32+16,y*32+16)]??3));
       const alive=new Set();
-      for(const p of result)if(p.hp>0&&!p.used&&p.type!=='grass')alive.add(p.tx+','+p.ty);
+      for(const p of result)if(p.hp>0&&!p.used&&p.type!=='grass')alive.add(tileKey(p.tx,p.ty));
       // Anything inside the fully visible view that is not alive was broken or used.
-      for(let y=y0+1;y<y1-1;y++)for(let x=x0+1;x<x1-1;x++){const key=x+','+y;if(!alive.has(key)&&(props.has(key)||propSpec(x,y))){props.delete(key);gone.add(key);}}
+      for(let y=y0+1;y<y1-1;y++)for(let x=x0+1;x<x1-1;x++){const key=tileKey(x,y);if(!alive.has(key)&&(props.has(key)||propSpec(x,y))){props.delete(key);gone.add(key);}}
       for(const p of result){
         if(p.hp<=0||p.used||p.type==='grass')continue;
-        const key=p.tx+','+p.ty;gone.delete(key);
+        const key=tileKey(p.tx,p.ty);gone.delete(key);
         props.set(key,{type:p.type,tx:p.tx,ty:p.ty,x:p.x,y:p.y,charge:p.charge,predicted:false});
       }
-      while(terrain.size>100000)terrain.delete(terrain.keys().next().value);
       while(props.size>12000)props.delete(props.keys().next().value);
       while(gone.size>20000)gone.delete(gone.values().next().value);
     }
@@ -74,13 +93,17 @@
     cols=Math.max(1,Math.min(160,cols|0));rows=Math.max(1,Math.min(160,rows|0));
     const values=new Uint8Array(cols*rows).fill(3),found=[],a=arenaOf();
     for(let y=0;y<rows;y++)for(let x=0;x<cols;x++){
-      const tx=tx0+x,ty=ty0+y,key=tx+','+ty,seen=terrain.get(key);
-      if(seen!==undefined&&!predict){values[y*cols+x]=seen;continue;}
+      const tx=tx0+x,ty=ty0+y,seen=terrain.get(tx,ty);
+      if(seen&&!predict){values[y*cols+x]=seen-1;continue;}
       if(!predict)continue;
-      let v=predicted.get(key);
-      if(!v){v={terrain:terrainRaw(tx,ty,a),spec:propSpec(tx,ty,a)};if(predicted.size>100000)predicted.clear();predicted.set(key,v);}
-      values[y*cols+x]=seen??v.terrain;
-      if(v.spec&&!props.has(key)&&!gone.has(key))found.push({...v.spec,tx,ty,predicted:true});
+      const key=tileKey(tx,ty);let v=predicted.get(tx,ty);
+      if(!v){
+        const spec=propSpec(tx,ty,a);v=1+terrainRaw(tx,ty,a)+(spec?4:0);
+        if(spec){if(specs.size>=20000)clearPredicted();specs.set(key,spec);}
+        predicted.set(tx,ty,v);
+      }
+      values[y*cols+x]=seen?seen-1:(v-1)&3;
+      if(v&4&&!props.has(key)&&!gone.has(key)){const spec=specs.get(key)||propSpec(tx,ty,a);if(spec)found.push({...spec,tx,ty,predicted:true});}
     }
     for(const p of props.values())if(p.tx>=tx0&&p.tx<tx0+cols&&p.ty>=ty0&&p.ty<ty0+rows)found.push({...p});
     return {terrain:values,props:found,tx0,ty0,cols,rows,seed};

@@ -153,6 +153,11 @@
 
 
 
+
+
+
+
+
 .method public onReceivedError(Landroid/webkit/WebView;Landroid/webkit/WebResourceRequest;Landroid/webkit/WebResourceError;)V
     .locals 2
     invoke-virtual {p1}, Landroid/webkit/WebView;->getUrl()Ljava/lang/String;
@@ -176,6 +181,11 @@
     :done
     return-void
 .end method
+
+
+
+
+
 
 
 
@@ -261,4 +271,12 @@
     invoke-virtual {p1, v0}, Landroid/webkit/WebView;->loadUrl(Ljava/lang/String;)V
     :done
     return-void
+.end method
+
+.method public onRenderProcessGone(Landroid/webkit/WebView;Landroid/webkit/RenderProcessGoneDetail;)Z
+    .locals 1
+    iget-object v0, p0, Lcom/john/pokesurvivor/OnlineWebViewClient;->activity:Lcom/john/pokesurvivor/MainActivity;
+    invoke-virtual {v0}, Lcom/john/pokesurvivor/MainActivity;->restartAfterRendererGone()V
+    const/4 v0, 0x1
+    return v0
 .end method

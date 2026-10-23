@@ -159,3 +159,18 @@
 #dex-detail .ps-dex-action { gap:6px; }
 @media (max-height:600px) and (min-width:600px) { #dex-detail .ps-dex-action:not(:empty) { display:flex; } #dex-detail .ps-dex-action .btn { flex:1; } }
 #ps-upg-dex { margin-left:8px; }
+/* Item choices (Mint / Ability Capsule / Patch / TM) brought into view. */
+#dex-detail .ban-picker.ps-flash { box-shadow:0 0 0 3px var(--gold); transition:box-shadow .3s; }
+/* Official phone CSS makes every button in the Pokédex page sticky (meant for
+   the partner button), so Mint / Capsule / TM buttons floated while scrolling. */
+#dex-detail .mon-extra .btn { position:static; order:0; margin-top:0; margin-left:auto; padding:1px 7px; font-size:11px; line-height:1.4; min-height:0; border-width:1.5px; border-radius:8px; box-shadow:none; }
+#dex-detail .mon-extra .btn img { width:11px; height:11px; }
+#dex-detail .mon-extra .btn small { font-size:10px; }
+/* Narrow detail panel: shorter labels so the item button fits on the row. */
+@media (max-height:600px) and (min-width:600px) { #dex-detail .mon-extra { padding:6px 8px; font-size:12px; } #dex-detail .mon-extra .mx-row > span:first-child { min-width:44px; } }
+#dex-detail .mon-extra .btn + .btn { margin-left:0; }
+#dex-detail .mon-extra .ps-ability-note { margin-left:auto; color:var(--muted); font-size:11px; }
+/* Ability choices with their effect. */
+#dex-detail .ps-ability-picker .ban-moves { display:flex; flex-direction:column; gap:6px; }
+#dex-detail .ps-ability-picker .chip { display:block; text-align:left; white-space:normal; height:auto; padding:6px 9px; line-height:1.35; }
+#dex-detail .ps-ability-picker .ps-ability-desc { display:block; margin-top:2px; font-size:11px; color:var(--muted); font-weight:400; }

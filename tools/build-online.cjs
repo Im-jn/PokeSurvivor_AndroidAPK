@@ -6,7 +6,7 @@ const dev=read('source/dev.html');
 const map=dev.slice(dev.indexOf('<section id="scr-map"'),dev.indexOf('<!-- scripts:begin -->'));
 const modules=['js/core/audio.js'].map(p=>`/* ${p} */
 `+read('source/'+p));
-modules.push(read('source/js/ui/map-ui.js'),read('source/online/game-adapter.js'),read('source/online/run-mode.js'),read('source/online/dex-layout.js'),read('source/online/dex-extras.js'),read('source/online/attack-button.js'),read('source/online/cloud-sync.js'),read('source/js/core/mobile-layout.js'));
+modules.push(read('source/js/ui/map-ui.js'),read('source/online/game-adapter.js'),read('source/online/run-mode.js'),read('source/online/dex-layout.js'),read('source/online/dex-extras.js'),read('source/online/attack-button.js'),read('source/online/cloud-sync.js'),read('source/online/run-rescue.js'),read('source/js/core/mobile-layout.js'));
 // Our own UI strings (map, pause button) for the official i18n: Spanish keys.
 const labels=require('./map-labels.cjs');
 const labelsZh=Object.fromEntries(Object.entries(labels).map(([k,v])=>[k,v[0]])),labelsEn=Object.fromEntries(Object.entries(labels).map(([k,v])=>[k,v[1]]));
@@ -87,7 +87,7 @@ const install=`function install(G,recover) {
     if(bar){const b=document.createElement('button');b.id='ps-go-online';b.className='btn small gold';b.setAttribute('translate','no');b.textContent='返回在线版';b.onclick=()=>{try{G.DB.commit(true);}catch(_){}AndroidApp.openOnline();};bar.prepend(b);}
   }
   const observer=new MutationObserver(()=>{if(document.querySelector('#scr-settings:not(.hidden)')){addOfflineEntry();}});observer.observe(document.getElementById('set-body'),{childList:true});
-  window.__PSOnlineInstalled={version:'1.4.7',origin:location.origin,officialDBUnchanged:G.DB===officialDB,officialConfigUnchanged:G.FIREBASE_CONFIG===officialConfig,officialFlowUnchanged:G.Flow===officialFlow,officialGameUnchanged:G.Game===officialGame&&G.Game.startRun===officialStart,judgment:!!G.Judgment};
+  window.__PSOnlineInstalled={version:'1.5.0',origin:location.origin,officialDBUnchanged:G.DB===officialDB,officialConfigUnchanged:G.FIREBASE_CONFIG===officialConfig,officialFlowUnchanged:G.Flow===officialFlow,officialGameUnchanged:G.Game===officialGame&&G.Game.startRun===officialStart,judgment:!!G.Judgment};
 }
 `;
 // Prototype interception is temporary and is removed as soon as the official
@@ -113,6 +113,30 @@ if(!Array.prototype.flatMap)Object.defineProperty(Array.prototype,'flatMap',{con
 if(!Object.fromEntries)Object.fromEntries=function(it){var o={};Array.from(it,function(e){o[e[0]]=e[1];});return o;};
 if(!Array.prototype.at)Object.defineProperty(Array.prototype,'at',{configurable:true,writable:true,value:function(i){i=Math.trunc(i)||0;if(i<0)i+=this.length;return this[i];}});
 try{sessionStorage.removeItem('ps.online.disable-enhancements');}catch(storageError){}
+// Hit-flash silhouettes for the patched official client (tools/official-patches.cjs):
+// each is as big as a whole sprite sheet, so keep only those used recently.
+window.__psWhiteCache=function(){
+  var m=new Map(),swept=0,MAX=40,IDLE=6000;
+  return {
+    get:function(k){var now=Date.now(),e;if(now-swept>2000){swept=now;m.forEach(function(v,key){if(now-v.t>IDLE)m.delete(key);});}e=m.get(k);if(!e)return undefined;if(now-e.t>500){m.delete(k);m.set(k,e);}e.t=now;return e.c;},
+    set:function(k,c){m.set(k,{c:c,t:Date.now()});if(m.size>MAX)m.delete(m.keys().next().value);return this;},
+    get size(){return m.size;}
+  };
+};
+// Sprite sheet cache of the patched client: entries {at, img}. Over 120 sheets,
+// free those unused for 30 s (oldest first, down to 80) the way the client does
+// when a sheet loads; sheets on screen are touched every frame and stay.
+window.__psSheetCache=function(){
+  var m=new Map();
+  setInterval(function(){
+    if(m.size<=120)return;
+    var now=Date.now(),old=[];
+    m.forEach(function(e,k){if(e&&e.img&&typeof e.at==='number'&&now-e.at>30000)old.push([k,e]);});
+    old.sort(function(a,b){return a[1].at-b[1].at;});
+    old.slice(0,m.size-80).forEach(function(p){m.delete(p[0]);p[1].img.onload=p[1].img.onerror=null;p[1].img.src='';});
+  },5000);
+  return m;
+};
 // Offline: never leave the player on an endless loading screen.
 if(location.protocol==='file:')setTimeout(function(){
   var boot=document.getElementById('boot'),tap=document.getElementById('tap-start');

@@ -14,6 +14,30 @@ if(!Array.prototype.flatMap)Object.defineProperty(Array.prototype,'flatMap',{con
 if(!Object.fromEntries)Object.fromEntries=function(it){var o={};Array.from(it,function(e){o[e[0]]=e[1];});return o;};
 if(!Array.prototype.at)Object.defineProperty(Array.prototype,'at',{configurable:true,writable:true,value:function(i){i=Math.trunc(i)||0;if(i<0)i+=this.length;return this[i];}});
 try{sessionStorage.removeItem('ps.online.disable-enhancements');}catch(storageError){}
+// Hit-flash silhouettes for the patched official client (tools/official-patches.cjs):
+// each is as big as a whole sprite sheet, so keep only those used recently.
+window.__psWhiteCache=function(){
+  var m=new Map(),swept=0,MAX=40,IDLE=6000;
+  return {
+    get:function(k){var now=Date.now(),e;if(now-swept>2000){swept=now;m.forEach(function(v,key){if(now-v.t>IDLE)m.delete(key);});}e=m.get(k);if(!e)return undefined;if(now-e.t>500){m.delete(k);m.set(k,e);}e.t=now;return e.c;},
+    set:function(k,c){m.set(k,{c:c,t:Date.now()});if(m.size>MAX)m.delete(m.keys().next().value);return this;},
+    get size(){return m.size;}
+  };
+};
+// Sprite sheet cache of the patched client: entries {at, img}. Over 120 sheets,
+// free those unused for 30 s (oldest first, down to 80) the way the client does
+// when a sheet loads; sheets on screen are touched every frame and stay.
+window.__psSheetCache=function(){
+  var m=new Map();
+  setInterval(function(){
+    if(m.size<=120)return;
+    var now=Date.now(),old=[];
+    m.forEach(function(e,k){if(e&&e.img&&typeof e.at==='number'&&now-e.at>30000)old.push([k,e]);});
+    old.sort(function(a,b){return a[1].at-b[1].at;});
+    old.slice(0,m.size-80).forEach(function(p){m.delete(p[0]);p[1].img.onload=p[1].img.onerror=null;p[1].img.src='';});
+  },5000);
+  return m;
+};
 // Offline: never leave the player on an endless loading screen.
 if(location.protocol==='file:')setTimeout(function(){
   var boot=document.getElementById('boot'),tap=document.getElementById('tap-start');
@@ -1124,6 +1148,21 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
 #dex-detail .ps-dex-action { gap:6px; }
 @media (max-height:600px) and (min-width:600px) { #dex-detail .ps-dex-action:not(:empty) { display:flex; } #dex-detail .ps-dex-action .btn { flex:1; } }
 #ps-upg-dex { margin-left:8px; }
+/* Item choices (Mint / Ability Capsule / Patch / TM) brought into view. */
+#dex-detail .ban-picker.ps-flash { box-shadow:0 0 0 3px var(--gold); transition:box-shadow .3s; }
+/* Official phone CSS makes every button in the Pok\xE9dex page sticky (meant for
+   the partner button), so Mint / Capsule / TM buttons floated while scrolling. */
+#dex-detail .mon-extra .btn { position:static; order:0; margin-top:0; margin-left:auto; padding:1px 7px; font-size:11px; line-height:1.4; min-height:0; border-width:1.5px; border-radius:8px; box-shadow:none; }
+#dex-detail .mon-extra .btn img { width:11px; height:11px; }
+#dex-detail .mon-extra .btn small { font-size:10px; }
+/* Narrow detail panel: shorter labels so the item button fits on the row. */
+@media (max-height:600px) and (min-width:600px) { #dex-detail .mon-extra { padding:6px 8px; font-size:12px; } #dex-detail .mon-extra .mx-row > span:first-child { min-width:44px; } }
+#dex-detail .mon-extra .btn + .btn { margin-left:0; }
+#dex-detail .mon-extra .ps-ability-note { margin-left:auto; color:var(--muted); font-size:11px; }
+/* Ability choices with their effect. */
+#dex-detail .ps-ability-picker .ban-moves { display:flex; flex-direction:column; gap:6px; }
+#dex-detail .ps-ability-picker .chip { display:block; text-align:left; white-space:normal; height:auto; padding:6px 9px; line-height:1.35; }
+#dex-detail .ps-ability-picker .ps-ability-desc { display:block; margin-top:2px; font-size:11px; color:var(--muted); font-weight:400; }
 
 /* Online-only overrides; responsive layout is shared offline. */\r
 `;
@@ -2276,7 +2315,7 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
       const now = performance.now();
       if (!mini) mini = document.createElement("canvas");
       if (!miniAt || now - miniAt > 350) {
-        mini.width = mini.height = 144;
+        if (mini.width !== 144) mini.width = mini.height = 144;
         const s = snapshot(pl.x / 32, pl.y / 32, 64);
         paint(mini.getContext("2d"), 144, s, pl, true, size);
         miniAt = now;
@@ -2305,13 +2344,48 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
   ;
   (() => {
     const game = G.Game, world = G.World, hud = G.HUD;
-    const terrain = /* @__PURE__ */ new Map(), props = /* @__PURE__ */ new Map(), gone = /* @__PURE__ */ new Set(), predicted = /* @__PURE__ */ new Map();
+    const tileKey = (x, y) => (x + 16384 & 32767) * 32768 + (y + 16384 & 32767);
+    function TileBytes(maxBlocks) {
+      const blocks = /* @__PURE__ */ new Map();
+      let lastKey = -1, last = null;
+      return {
+        get(x, y) {
+          const b = blocks.get(tileKey(x >> 6, y >> 6));
+          return b ? b[(y & 63) * 64 + (x & 63)] : 0;
+        },
+        set(x, y, v) {
+          const k = tileKey(x >> 6, y >> 6);
+          let b = k === lastKey ? last : blocks.get(k);
+          if (!b) {
+            if (blocks.size >= maxBlocks) blocks.delete(blocks.keys().next().value);
+            b = new Uint8Array(4096);
+          }
+          if (k !== lastKey) {
+            blocks.delete(k);
+            blocks.set(k, b);
+            lastKey = k;
+            last = b;
+          }
+          b[(y & 63) * 64 + (x & 63)] = v;
+        },
+        clear() {
+          blocks.clear();
+          lastKey = -1;
+          last = null;
+        }
+      };
+    }
+    const terrain = TileBytes(256), predicted = TileBytes(64), specs = /* @__PURE__ */ new Map(), props = /* @__PURE__ */ new Map(), gone = /* @__PURE__ */ new Set();
     let sampledAt = 0, seed = 1;
+    const clearPredicted = () => {
+      predicted.clear();
+      specs.clear();
+    };
     const clear = () => {
       terrain.clear();
       props.clear();
       gone.clear();
-      predicted.clear();
+      clearPredicted();
       sampledAt = 0;
     };
     const reset = world.reset;
@@ -2323,7 +2397,7 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
     for (const key of ["setBiome", "setArena"]) {
       const original = world[key];
       world[key] = function(...args) {
-        if (key === "setArena") predicted.clear();
+        if (key === "setArena") clearPredicted();
         return original.apply(this, args);
       };
     }
@@ -2394,11 +2468,11 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
         sampledAt = performance.now();
         const x0 = Math.floor(cam.left() / 32), y0 = Math.floor(cam.top() / 32);
         const x1 = Math.ceil((cam.left() + cam.w) / 32), y1 = Math.ceil((cam.top() + cam.h) / 32);
-        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) terrain.set(x + "," + y, (_a = { floor: 0, wall: 1, liquid: 2 }[world.kindAt(x * 32 + 16, y * 32 + 16)]) != null ? _a : 3);
+        for (let y = y0; y < y1; y++) for (let x = x0; x < x1; x++) terrain.set(x, y, 1 + ((_a = { floor: 0, wall: 1, liquid: 2 }[world.kindAt(x * 32 + 16, y * 32 + 16)]) != null ? _a : 3));
         const alive = /* @__PURE__ */ new Set();
-        for (const p of result) if (p.hp > 0 && !p.used && p.type !== "grass") alive.add(p.tx + "," + p.ty);
+        for (const p of result) if (p.hp > 0 && !p.used && p.type !== "grass") alive.add(tileKey(p.tx, p.ty));
         for (let y = y0 + 1; y < y1 - 1; y++) for (let x = x0 + 1; x < x1 - 1; x++) {
-          const key = x + "," + y;
+          const key = tileKey(x, y);
           if (!alive.has(key) && (props.has(key) || propSpec(x, y))) {
             props.delete(key);
             gone.add(key);
@@ -2406,11 +2480,10 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
         }
         for (const p of result) {
           if (p.hp <= 0 || p.used || p.type === "grass") continue;
-          const key = p.tx + "," + p.ty;
+          const key = tileKey(p.tx, p.ty);
           gone.delete(key);
           props.set(key, { type: p.type, tx: p.tx, ty: p.ty, x: p.x, y: p.y, charge: p.charge, predicted: false });
         }
-        while (terrain.size > 1e5) terrain.delete(terrain.keys().next().value);
         while (props.size > 12e3) props.delete(props.keys().next().value);
         while (gone.size > 2e4) gone.delete(gone.values().next().value);
       }
@@ -2421,20 +2494,28 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
       rows = Math.max(1, Math.min(160, rows | 0));
       const values = new Uint8Array(cols * rows).fill(3), found = [], a = arenaOf();
       for (let y = 0; y < rows; y++) for (let x = 0; x < cols; x++) {
-        const tx = tx0 + x, ty = ty0 + y, key = tx + "," + ty, seen = terrain.get(key);
-        if (seen !== void 0 && !predict) {
-          values[y * cols + x] = seen;
+        const tx = tx0 + x, ty = ty0 + y, seen = terrain.get(tx, ty);
+        if (seen && !predict) {
+          values[y * cols + x] = seen - 1;
           continue;
         }
         if (!predict) continue;
-        let v = predicted.get(key);
+        const key = tileKey(tx, ty);
+        let v = predicted.get(tx, ty);
         if (!v) {
-          v = { terrain: terrainRaw(tx, ty, a), spec: propSpec(tx, ty, a) };
-          if (predicted.size > 1e5) predicted.clear();
-          predicted.set(key, v);
+          const spec = propSpec(tx, ty, a);
+          v = 1 + terrainRaw(tx, ty, a) + (spec ? 4 : 0);
+          if (spec) {
+            if (specs.size >= 2e4) clearPredicted();
+            specs.set(key, spec);
+          }
+          predicted.set(tx, ty, v);
         }
-        values[y * cols + x] = seen != null ? seen : v.terrain;
-        if (v.spec && !props.has(key) && !gone.has(key)) found.push({ ...v.spec, tx, ty, predicted: true });
+        values[y * cols + x] = seen ? seen - 1 : v - 1 & 3;
+        if (v & 4 && !props.has(key) && !gone.has(key)) {
+          const spec = specs.get(key) || propSpec(tx, ty, a);
+          if (spec) found.push({ ...spec, tx, ty, predicted: true });
+        }
       }
       for (const p of props.values()) if (p.tx >= tx0 && p.tx < tx0 + cols && p.ty >= ty0 && p.ty < ty0 + rows) found.push({ ...p });
       return { terrain: values, props: found, tx0, ty0, cols, rows, seed };
@@ -2692,6 +2773,71 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
     new MutationObserver(() => {
       if (dexScreen.classList.contains("hidden")) hideTip();
     }).observe(dexScreen, { attributes: true, attributeFilter: ["class"] });
+    let wantPicker = 0, lastExtra = "";
+    detail.addEventListener("click", (event) => {
+      const b = event.target.closest && event.target.closest("[data-extra]");
+      if (b) {
+        wantPicker = performance.now();
+        lastExtra = b.dataset.extra;
+      }
+    }, true);
+    function describeAbilities(picker) {
+      if (!/^cap/.test(lastExtra) || picker.dataset.psDescribed) return;
+      const id = currentDex(), mon = G.DEX_BY && G.DEX_BY[id];
+      let slots;
+      try {
+        slots = G.Mons.slots(id);
+      } catch (_) {
+        return;
+      }
+      if (!mon || !Array.isArray(slots)) return;
+      picker.dataset.psDescribed = "1";
+      picker.classList.add("ps-ability-picker");
+      for (const chip of picker.querySelectorAll(".chip[data-v]")) {
+        const ability = slots[+chip.dataset.v];
+        if (!ability) continue;
+        let fx = null;
+        try {
+          fx = G.AbilityFX.of(ability, mon);
+        } catch (_) {
+        }
+        if (!fx || !fx.d) continue;
+        const d = document.createElement("small");
+        d.className = "ps-ability-desc";
+        d.textContent = T(fx.d) + (fx.d2 ? " " + T(fx.d2) : "");
+        chip.appendChild(d);
+      }
+    }
+    new MutationObserver(() => {
+      if (!wantPicker || performance.now() - wantPicker > 2e3) return;
+      const picker = detail.querySelector(".ban-picker");
+      if (!picker) return;
+      wantPicker = 0;
+      describeAbilities(picker);
+      requestAnimationFrame(() => {
+        picker.scrollIntoView({ block: "center", behavior: "smooth" });
+        picker.classList.add("ps-flash");
+        setTimeout(() => picker.classList.remove("ps-flash"), 1200);
+      });
+    }).observe(detail, { childList: true, subtree: true });
+    const NOTE = { zh: "\u53EA\u6709\u4E00\u79CD\u7279\u6027\uFF0C\u4E0D\u80FD\u66F4\u6362", en: "Only one ability: cannot be changed", es: "Solo tiene una habilidad: no se puede cambiar" };
+    function abilityNote() {
+      const rows = detail.querySelectorAll(".mon-extra .mx-row");
+      const row = rows[1];
+      if (!row || row.querySelector(".ps-ability-note") || row.querySelector('[data-extra="cap"],[data-extra="caph"]')) return;
+      const id = currentDex();
+      try {
+        if (!id || !G.Shop || G.Shop.count("cap") + G.Shop.count("caph") <= 0 || G.Mons.abilityChoices(id, true).length) return;
+      } catch (_) {
+        return;
+      }
+      const l = String(G.I18n && G.I18n.lang || ""), note = document.createElement("small");
+      note.className = "ps-ability-note";
+      note.setAttribute("translate", "no");
+      note.textContent = /^zh/.test(l) ? NOTE.zh : l === "es" ? NOTE.es : NOTE.en;
+      row.appendChild(note);
+    }
+    new MutationObserver(abilityNote).observe(detail, { childList: true, subtree: true });
     const currentDex = () => {
       const head = detail.querySelector(".center");
       const m = head && head.textContent.match(/\b(\d{3,4})\b/);
@@ -3230,6 +3376,116 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
   })();
   ;
   (() => {
+    const DB = G.DB, Game = G.Game;
+    if (!DB || !Game || typeof DB.commit !== "function") return;
+    const KEY = "ps.runRescue", EVERY = 8e3, MAX_AGE = 7 * 24 * 36e5;
+    const TEXT = {
+      zh: (c, t, k) => `\u4E0A\u4E00\u5C40\u610F\u5916\u4E2D\u65AD\uFF0C\u5DF2\u6309\u4E2D\u65AD\u65F6\u7684\u8FDB\u5EA6\u8865\u53D1 ${c} \u5B9D\u53EF\u91D1\u5E01\uFF08\u575A\u6301 ${t}\uFF0C\u51FB\u8D25 ${k}\uFF09\u3002`,
+      en: (c, t, k) => `Your last run was interrupted: ${c} Pok\xE9Coins added for it (${t}, ${k} defeated).`,
+      es: (c, t, k) => `Tu \xFAltima partida se interrumpi\xF3: se te dan ${c} Pok\xE9monedas por ella (${t}, ${k} derrotados).`
+    };
+    const text = () => {
+      const l = String(G.I18n && G.I18n.lang || "");
+      return /^zh/.test(l) ? TEXT.zh : l === "es" ? TEXT.es : TEXT.en;
+    };
+    const read = () => {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) || "null");
+      } catch (_) {
+        return null;
+      }
+    };
+    const clear = () => {
+      try {
+        localStorage.removeItem(KEY);
+      } catch (_) {
+      }
+    };
+    const account = () => {
+      try {
+        if (!DB.save || DB.guest && DB.mode === "cloud") return null;
+        return DB.mode + ":" + (DB.user || "guest");
+      } catch (_) {
+        return null;
+      }
+    };
+    const inRun = () => ["playing", "paused", "held", "levelup", "ui-run"].includes(Game.state) || Game.player && Game.state !== "ui" && Game.state !== "over";
+    let lastPlayer = null, runId = "";
+    function checkpoint() {
+      const p = Game.player, acct = account();
+      if (!p || !acct || !inRun() || p.dead && Game.state === "over") return;
+      if (p !== lastPlayer) {
+        lastPlayer = p;
+        runId = Date.now().toString(36) + Math.random().toString(36).slice(2, 6);
+      }
+      const time = Game.st && +Game.st.time || 0;
+      if (time < 30) return;
+      try {
+        localStorage.setItem(KEY, JSON.stringify({ acct, id: runId, dex: p.dex, time, kills: p.kills | 0, bosses: p.bosses | 0, coins: p.coins | 0, coinMul: +p.coinMul || 1, level: p.level | 0, at: Date.now() }));
+      } catch (_) {
+      }
+    }
+    setInterval(checkpoint, EVERY);
+    document.addEventListener("visibilitychange", () => {
+      if (document.visibilityState === "hidden") checkpoint();
+    });
+    addEventListener("pagehide", checkpoint);
+    const commit = DB.commit;
+    DB.commit = function(reason, ...rest) {
+      if (reason === "run") {
+        clear();
+        lastPlayer = null;
+      }
+      return commit.call(this, reason, ...rest);
+    };
+    function apply() {
+      const r = read();
+      if (!r) return true;
+      if (Date.now() - r.at > MAX_AGE) {
+        clear();
+        return true;
+      }
+      if (inRun()) return false;
+      const acct = account();
+      if (!acct) return false;
+      if (acct !== r.acct) return false;
+      const s = DB.save;
+      if (!s) return false;
+      const coins = Math.round((Math.floor(r.time / 5) + Math.floor(0.25 * r.kills) + 80 * r.bosses + r.coins) * r.coinMul);
+      s.coins = (+s.coins || 0) + coins;
+      const st = s.stats = s.stats || {};
+      st.runs = (+st.runs || 0) + 1;
+      st.totalKills = (+st.totalKills || 0) + r.kills;
+      st.coinsEarned = (+st.coinsEarned || 0) + coins;
+      st.bestTime = Math.max(+st.bestTime || 0, Math.floor(r.time));
+      st.bestLevel = Math.max(+st.bestLevel || 0, r.level);
+      if (r.dex) {
+        s.pused = s.pused || {};
+        s.pused[r.dex] = (+s.pused[r.dex] || 0) + 1;
+      }
+      clear();
+      try {
+        commit.call(DB, true);
+      } catch (_) {
+      }
+      try {
+        G.UI.refreshCoins && G.UI.refreshCoins();
+      } catch (_) {
+      }
+      const t = Math.floor(r.time / 60) + ":" + String(Math.floor(r.time % 60)).padStart(2, "0");
+      try {
+        G.UI.toast(text()(coins, t, r.kills), 9e3);
+      } catch (_) {
+      }
+      return true;
+    }
+    const timer = setInterval(() => {
+      if (apply()) clearInterval(timer);
+    }, 2e3);
+    G.RunRescue = { checkpoint, apply, read, clear };
+  })();
+  ;
+  (() => {
     var _a;
     if (location.protocol === "file:") document.documentElement.classList.add("ps-offline");
     const bar = document.getElementById("topbar");
@@ -3418,7 +3674,7 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
     }
   });
   observer.observe(document.getElementById("set-body"), { childList: true });
-  window.__PSOnlineInstalled = { version: "1.4.7", origin: location.origin, officialDBUnchanged: G.DB === officialDB, officialConfigUnchanged: G.FIREBASE_CONFIG === officialConfig, officialFlowUnchanged: G.Flow === officialFlow, officialGameUnchanged: G.Game === officialGame && G.Game.startRun === officialStart, judgment: !!G.Judgment };
+  window.__PSOnlineInstalled = { version: "1.5.0", origin: location.origin, officialDBUnchanged: G.DB === officialDB, officialConfigUnchanged: G.FIREBASE_CONFIG === officialConfig, officialFlowUnchanged: G.Flow === officialFlow, officialGameUnchanged: G.Game === officialGame && G.Game.startRun === officialStart, judgment: !!G.Judgment };
 });
 var prior=Object.getOwnPropertyDescriptor(Object.prototype,'Game');
 var captured=false;

@@ -18,7 +18,8 @@ const official=fs.readFileSync(path.join(root,'source/vendor/official/index.html
 const ver=re=>(official.match(re)||[])[1];
 const appV=ver(/js\/app\.min\.js\?v=([\w-]+)/),cssV=ver(/css\/style\.css\?v=([\w-]+)/),locV=ver(/js\/core\/locales\.js\?v=([\w-]+)/);
 const versioned=[];
-if(appV)versioned.push({path:'/js/app.min.js',v:appV,need:'__ps_original',file:'vendor/official/app.min.js',mime:'application/javascript'});
+// js/official-app.js: the same build with the memory patches (build-current-offline.cjs).
+if(appV)versioned.push({path:'/js/app.min.js',v:appV,need:'__ps_original',file:'js/official-app.js',mime:'application/javascript'});
 if(cssV)versioned.push({path:'/css/style.css',v:cssV,file:'vendor/official/style.css',mime:'text/css'});
 if(locV){
   versioned.push({path:'/js/core/locales.js',v:locV,file:'vendor/official/js/core/locales.js',mime:'application/javascript'});

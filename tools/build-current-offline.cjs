@@ -1,7 +1,12 @@
 // Pin the offline client to a verified official snapshot, preserving save storage.
 const fs=require('node:fs'),crypto=require('node:crypto');
 const prefix=fs.readFileSync('source/online/bridge-prefix.js','utf8');
-const client=fs.readFileSync('source/vendor/official/app.min.js','utf8');
+// Memory patches (tools/official-patches.cjs). The patched client, in its
+// original form, is also what the APK serves online for the same official build.
+const patched=require('./official-patches.cjs').patchOfficial(fs.readFileSync('source/vendor/official/app.min.js','utf8'));
+if(patched.skipped.length)console.warn('Official memory patches skipped (code changed): '+patched.skipped.join(', '));
+const client=patched.code;
+fs.writeFileSync('source/js/official-app.js',client);
 const vm=require('node:vm');new vm.Script(client);
 // The official client now needs ES2020 (?? and ?.): on an older Android System
 // WebView (Chrome < 80, common on vivo/OPPO/Xiaomi without Google Play) it does
@@ -30,4 +35,4 @@ fs.writeFileSync('source/css/current-official.css',fs.readFileSync('source/vendo
 fs.writeFileSync('source/js/ps-prefix.js',prefix);
 fs.writeFileSync('source/js/current-offline.js',clientCompat);
 fs.writeFileSync('source/index.html',html);
-console.log('Current offline client with Judgment: '+hash);
+console.log('Current offline client with Judgment: '+hash+' (memory patches: '+(patched.applied.join(', ')||'none')+')');

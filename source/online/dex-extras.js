@@ -50,6 +50,51 @@
   detail.addEventListener('scroll',hideTip,true);
   new MutationObserver(()=>{if(dexScreen.classList.contains('hidden'))hideTip();}).observe(dexScreen,{attributes:true,attributeFilter:['class']});
 
+  // ---------- item pickers (Mint, Ability Capsule / Patch, TM) ----------
+  // Tapping an item button in a Pokémon's page opens its choices at the end of
+  // the page while the page jumps back to the top, so on a phone nothing seemed
+  // to happen. Bring the choices into view.
+  let wantPicker=0,lastExtra='';
+  detail.addEventListener('click',event=>{const b=event.target.closest&&event.target.closest('[data-extra]');if(b){wantPicker=performance.now();lastExtra=b.dataset.extra;}},true);
+  // Ability choices only show the ability's name: add what it does.
+  function describeAbilities(picker){
+    if(!/^cap/.test(lastExtra)||picker.dataset.psDescribed)return;
+    const id=currentDex(),mon=G.DEX_BY&&G.DEX_BY[id];let slots;
+    try{slots=G.Mons.slots(id);}catch(_){return;}
+    if(!mon||!Array.isArray(slots))return;
+    picker.dataset.psDescribed='1';picker.classList.add('ps-ability-picker');
+    for(const chip of picker.querySelectorAll('.chip[data-v]')){
+      const ability=slots[+chip.dataset.v];if(!ability)continue;
+      let fx=null;try{fx=G.AbilityFX.of(ability,mon);}catch(_){}
+      if(!fx||!fx.d)continue;
+      const d=document.createElement('small');d.className='ps-ability-desc';
+      d.textContent=T(fx.d)+(fx.d2?' '+T(fx.d2):'');
+      chip.appendChild(d);
+    }
+  }
+  new MutationObserver(()=>{
+    if(!wantPicker||performance.now()-wantPicker>2000)return;
+    const picker=detail.querySelector('.ban-picker');if(!picker)return;
+    wantPicker=0;describeAbilities(picker);
+    requestAnimationFrame(()=>{picker.scrollIntoView({block:'center',behavior:'smooth'});picker.classList.add('ps-flash');setTimeout(()=>picker.classList.remove('ps-flash'),1200);});
+  }).observe(detail,{childList:true,subtree:true});
+
+  // Ability Capsule / Patch only show up when the Pokémon has another ability
+  // to switch to (153 Pokémon have just one). Say so instead of showing nothing.
+  const NOTE={zh:'只有一种特性，不能更换',en:'Only one ability: cannot be changed',es:'Solo tiene una habilidad: no se puede cambiar'};
+  function abilityNote(){
+    const rows=detail.querySelectorAll('.mon-extra .mx-row');const row=rows[1];
+    if(!row||row.querySelector('.ps-ability-note')||row.querySelector('[data-extra="cap"],[data-extra="caph"]'))return;
+    const id=currentDex();
+    try{
+      if(!id||!G.Shop||(G.Shop.count('cap')+G.Shop.count('caph'))<=0||G.Mons.abilityChoices(id,true).length)return;
+    }catch(_){return;}
+    const l=String(G.I18n&&G.I18n.lang||''),note=document.createElement('small');
+    note.className='ps-ability-note';note.setAttribute('translate','no');note.textContent=/^zh/.test(l)?NOTE.zh:l==='es'?NOTE.es:NOTE.en;
+    row.appendChild(note);
+  }
+  new MutationObserver(abilityNote).observe(detail,{childList:true,subtree:true});
+
   // ---------- Pokédex <-> Upgrades ----------
   const currentDex=()=>{const head=detail.querySelector('.center');const m=head&&head.textContent.match(/\b(\d{3,4})\b/);return m?+m[1]:0;};
   const owned=id=>{try{return !!G.DB.owns(id);}catch(_){return false;}};

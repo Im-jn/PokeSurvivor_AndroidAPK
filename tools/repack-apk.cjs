@@ -35,7 +35,9 @@ try{
     else{const raw=archive.subarray(entry.dataOffset,entry.dataOffset+entry.compressedSize);content=entry.method===0?raw:zlib.inflateRawSync(raw);}
     add(name,content,entry.method,entry);
   }
-  function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const full=path.join(dir,e.name);if(e.isDirectory())walk(full);else{const name='assets/www/'+path.relative(path.join(root,'source'),full).replaceAll('\\','/');if(!known.has(name))add(name,fs.readFileSync(full),8);}}}
+  // The unpatched snapshot client is only build input (js/official-app.js is served).
+  const buildOnly=new Set(['assets/www/vendor/official/app.min.js']);
+  function walk(dir){for(const e of fs.readdirSync(dir,{withFileTypes:true})){const full=path.join(dir,e.name);if(e.isDirectory())walk(full);else{const name='assets/www/'+path.relative(path.join(root,'source'),full).replaceAll('\\','/');if(!known.has(name)&&!buildOnly.has(name))add(name,fs.readFileSync(full),8);}}}
   walk(path.join(root,'source'));
   const centralOffset=position;for(const c of central)write(c);
   const end=Buffer.alloc(22);end.writeUInt32LE(0x06054b50,0);end.writeUInt16LE(count,8);end.writeUInt16LE(count,10);end.writeUInt32LE(position-centralOffset,12);end.writeUInt32LE(centralOffset,16);write(end);
