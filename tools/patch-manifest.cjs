@@ -2,7 +2,7 @@
 const fs=require('node:fs'),path=require('node:path');
 const root=path.resolve(__dirname,'..');
 const b=fs.readFileSync(path.join(root,'verification/AndroidManifest.xml'));
-const replacements={'.MainActivity':'com.john.pokesurvivor.MainActivity','com.john.pokesurvivor':'com.john.pokesurvivor.widemap','PokéSurvivor':'PokéSurvivor','2.0':'2.5.2'};
+const replacements={'.MainActivity':'com.john.pokesurvivor.MainActivity','com.john.pokesurvivor':'com.john.pokesurvivor.widemap','PokéSurvivor':'PokéSurvivor','2.0':'2.5.5'};
 let chunks=[],seen=[],poolNames=[],versionCodes=0;
 const pad=b=>Buffer.concat([b,Buffer.alloc((4-b.length%4)%4)]);
 const len8=n=>n>127?Buffer.from([0x80|(n>>8),n&255]):Buffer.from([n]);
@@ -35,7 +35,7 @@ for(let offset=8;offset<b.length;){
       const at = start + i * width;
       if (poolNames[chunk.readUInt32LE(at + 4)] === 'versionCode') {
         if (chunk[at + 15] !== 0x10) throw Error('Unexpected versionCode data type');
-        chunk.writeUInt32LE(chunk.readUInt32LE(at + 16) + 27, at + 16); versionCodes++;
+        chunk.writeUInt32LE(chunk.readUInt32LE(at + 16) + 30, at + 16); versionCodes++;
       }
     }
   }

@@ -34,5 +34,15 @@ for(const f of ['js/core/locales.js','js/noframe.js','js/boot.js'])if(fs.existsS
 fs.writeFileSync('source/css/current-official.css',fs.readFileSync('source/vendor/official/style.css'));
 fs.writeFileSync('source/js/ps-prefix.js',prefix);
 fs.writeFileSync('source/js/current-offline.js',clientCompat);
+// Newer official build kept on the phone (official-cache.js): the local
+// version runs it through latest.html. The gate is the first script.
+const bundledAt=Date.parse(JSON.parse(fs.readFileSync('source/vendor/official/provenance.json','utf8')).at)||0;
+fs.writeFileSync('source/js/ps-latest-gate.js',compat(fs.readFileSync('source/online/latest-gate.js','utf8').replace('__PS_BUNDLED_AT__',String(bundledAt))));
+fs.writeFileSync('source/js/ps-latest.js',compat(fs.readFileSync('source/online/latest-shell.js','utf8')));
+fs.writeFileSync('source/js/ps-latest-write.js',compat(fs.readFileSync('source/online/latest-write.js','utf8')));
+fs.writeFileSync('source/latest.html','<!doctype html><html lang="zh-CN"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover"><script src="js/ps-latest.js"></script></head></html>\n');
+const gate='<script src="js/ps-latest-gate.js?v='+bundledAt+'"></script>';
+html=/<meta http-equiv="Content-Security-Policy"[^>]*>/.test(html)?html.replace(/(<meta http-equiv="Content-Security-Policy"[^>]*>)/,'$1'+gate):html.replace(/(<meta charset[^>]*>)/i,'$1'+gate);
+if(!html.includes(gate))throw Error('latest gate not inserted');
 fs.writeFileSync('source/index.html',html);
 console.log('Current offline client with Judgment: '+hash+' (memory patches: '+(patched.applied.join(', ')||'none')+')');

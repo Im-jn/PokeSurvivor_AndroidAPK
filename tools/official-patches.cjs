@@ -8,7 +8,7 @@ const patches=[
     // unused for 20 s down to 150. A late run preloads 7 sheets per species
     // (50-70 species), so ~350 sheets / ~230 MB stayed decoded. Now 120 -> 80.
     name:'sprite-cache',
-    re:/(\['size'\]>=)0xc8(&&function\(_0x\w+\)\{const _0x\w+=\[\.\.\._0x\w+\]\['filter'\]\(\(\[,_0x\w+\]\)=>_0x\w+-_0x\w+\['at'\]>0x4e20\)\['sort'\][^;]{0,160}?Math\['floor'\]\()0x96\)/,
+    re:/(\['size'\]>=)0xc8(&&function\(_0x\w+\)\{const (?:_0x\w+=a0_0x\w+,)?_0x\w+=\[\.\.\._0x\w+\]\['filter'\]\(\(\[,_0x\w+\]\)=>_0x\w+-_0x\w+\['at'\]>0x4e20\)\['sort'\][^;]{0,160}?Math\['floor'\]\()0x96\)/,
     to:'$10x78$20x50)',
   },
   {

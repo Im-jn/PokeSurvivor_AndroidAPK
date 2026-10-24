@@ -17,7 +17,7 @@
     .locals 3
     if-eqz p0, :no
     if-eqz p1, :no
-    const-string v0, "^/(js/app[.]min[.]js|css/style[.]css|js/core/locales[.]js|js/lang/[A-Za-z-]+[.]js)$"
+    const-string v0, "^/(js/app[.]min[.]js|css/style[.]css|js/core/locales[.]js|js/lang/[A-Za-z-]+[.]js|js/ps-index[.]js)$"
     invoke-virtual {p0, v0}, Ljava/lang/String;->matches(Ljava/lang/String;)Z
     move-result v0
     if-eqz v0, :no
@@ -169,25 +169,66 @@
 .method public static open(Landroid/content/Context;Landroid/net/Uri;)Landroid/webkit/WebResourceResponse;
     .locals 6
     if-eqz p1, :miss
+    :try_start
     invoke-virtual {p1}, Landroid/net/Uri;->getScheme()Ljava/lang/String;
     move-result-object v0
-    const-string v1, "https"
-    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-    move-result v0
-    if-eqz v0, :miss
-    invoke-virtual {p1}, Landroid/net/Uri;->getHost()Ljava/lang/String;
-    move-result-object v0
-    const-string v1, "pokesurvivor.com"
-    invoke-virtual {v1, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
-    move-result v0
-    if-eqz v0, :miss
-    :try_start
     invoke-virtual {p1}, Landroid/net/Uri;->getPath()Ljava/lang/String;
+    move-result-object v1
+    if-eqz v1, :miss
+    const-string v2, "https"
+    invoke-virtual {v2, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v2
+    if-eqz v2, :not_https
+    invoke-virtual {p1}, Landroid/net/Uri;->getHost()Ljava/lang/String;
+    move-result-object v2
+    const-string v3, "pokesurvivor.com"
+    invoke-virtual {v3, v2}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v2
+    if-eqz v2, :miss
+    move-object v0, v1
+    goto :have_path
+    :not_https
+    # The local version (file:///android_asset/www/ps-kept/<path>?v=...) running a
+    # newer official build uses the same kept files.
+    const-string v2, "file"
+    invoke-virtual {v2, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
+    move-result v2
+    if-eqz v2, :miss
+    # Only under the virtual folder ps-kept/: files that exist in the APK are
+    # loaded without asking the client, so kept copies get their own paths.
+    const-string v2, "/android_asset/www/ps-kept/"
+    invoke-virtual {v1, v2}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v2
+    if-eqz v2, :miss
+    const/16 v2, 0x1a
+    invoke-virtual {v1, v2}, Ljava/lang/String;->substring(I)Ljava/lang/String;
     move-result-object v0
-    if-eqz v0, :miss
+    # Pictures and fonts named relative to a kept style sheet: the APK's own.
+    const-string v2, "/assets/"
+    invoke-virtual {v0, v2}, Ljava/lang/String;->startsWith(Ljava/lang/String;)Z
+    move-result v2
+    if-eqz v2, :have_path
+    new-instance v2, Ljava/lang/StringBuilder;
+    invoke-direct {v2}, Ljava/lang/StringBuilder;-><init>()V
+    const-string v3, "www"
+    invoke-virtual {v2, v3}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2, v0}, Ljava/lang/StringBuilder;->append(Ljava/lang/String;)Ljava/lang/StringBuilder;
+    invoke-virtual {v2}, Ljava/lang/StringBuilder;->toString()Ljava/lang/String;
+    move-result-object v2
+    invoke-virtual {p0}, Landroid/content/Context;->getAssets()Landroid/content/res/AssetManager;
+    move-result-object v3
+    invoke-virtual {v3, v2}, Landroid/content/res/AssetManager;->open(Ljava/lang/String;)Ljava/io/InputStream;
+    move-result-object v3
+    new-instance v4, Landroid/webkit/WebResourceResponse;
+    const-string v2, "application/octet-stream"
+    const/4 v5, 0x0
+    invoke-direct {v4, v2, v5, v3}, Landroid/webkit/WebResourceResponse;-><init>(Ljava/lang/String;Ljava/lang/String;Ljava/io/InputStream;)V
+    return-object v4
+    :have_path
     const-string v1, "v"
     invoke-virtual {p1, v1}, Landroid/net/Uri;->getQueryParameter(Ljava/lang/String;)Ljava/lang/String;
     move-result-object v1
+    if-eqz v1, :miss
     const-string v2, "/js/app.min.js"
     invoke-virtual {v2, v0}, Ljava/lang/String;->equals(Ljava/lang/Object;)Z
     move-result v2

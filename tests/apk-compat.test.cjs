@@ -11,5 +11,5 @@ test('source APK preserves the Android resource table mmap layout',()=>{
 });
 test('current release retains originally STORED entries and Android-compatible alignment',()=>{
  const original=path.join(root,'apk',fs.readdirSync(path.join(root,'apk'))[0]);
- check(path.join(root,'dist/PokeSurvivor-1.5.2.apk'),original);
+ check(path.join(root,'dist/PokeSurvivor-1.5.5.apk'),original);
 });

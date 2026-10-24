@@ -29,7 +29,7 @@ const root=path.resolve(__dirname,'..');
       const original=u.searchParams.get('__ps_original')==='1';
       // Native order: bundled build, kept copy, loader for the plain app.min.js.
       const bundled=res[u.origin+u.pathname+'?v='+v];
-      if(bundled&&(!bundled.need||original))return route.fulfill({status:200,contentType:bundled.mime,body:fs.readFileSync(path.join(root,'source',bundled.file))});
+      if(bundled&&(u.pathname!=='/js/app.min.js'||original))return route.fulfill({status:200,contentType:bundled.mime,body:fs.readFileSync(path.join(root,'source',bundled.file))});
       const k=kept.get(u.pathname+'@'+v);
       if(k&&(u.pathname!=='/js/app.min.js'||original)){served.push(u.pathname);return route.fulfill({status:200,contentType:u.pathname.endsWith('.css')?'text/css':'application/javascript',body:k});}
       if(u.pathname==='/js/app.min.js'&&!original)return route.fulfill({status:200,contentType:'application/javascript',body:fs.readFileSync(path.join(root,'source/online/client-loader.js'),'utf8')});
@@ -43,7 +43,7 @@ const root=path.resolve(__dirname,'..');
   const bundledApp=(fs.readFileSync(path.join(root,'source/vendor/official/index.html'),'utf8').match(/app\.min\.js\?v=([\w-]+)/)||[])[1];
   const boot=async()=>{
     await page.goto('https://pokesurvivor.com/',{waitUntil:'domcontentloaded',timeout:90000});
-    await page.waitForFunction(()=>window.__PSOnlineInstalled||window.__PSOnlineInstallError,{timeout:90000});
+    await page.waitForFunction(()=>window.__PSOnlineInstalled||window.__PSOnlineInstallError,null,{timeout:90000});
     return page.evaluate(()=>({installed:!!window.__PSOnlineInstalled,error:window.__PSOnlineInstallError||null,failBox:!!document.getElementById('ps-enhancement-error'),box:!!document.getElementById('ps-official-download'),sheetCache:typeof window.__psSheetCache}));
   };
   const first=await boot();

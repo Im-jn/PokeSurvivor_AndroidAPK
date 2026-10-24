@@ -1,0 +1,11 @@
+const fs=require('node:fs');let s=fs.readFileSync('source/js/ui/map-ui.js','utf8');
+s=s.replace('function watermark(ctx,size,displaySize,compact) {','function watermark(ctx,size,displaySize,compact,bottom=size) {').replace('let font=(compact?7:10)*scale;','let font=(compact?8:10)*scale;').replaceAll('size-pad,size-pad','size-pad,bottom-pad');
+s=s.replace('    watermark(ctx,size,displaySize,compact);','    if(!compact)watermark(ctx,size,displaySize,false);');
+s=s.replaceAll('size+6,size+24','size+6,size+36');
+const original="    ctx.fillText(tr('Mapa')+' · M',x+size/2,y+size+14);ctx.restore();";
+if(!s.includes(original))throw Error('HUD footer missing');
+s=s.replace(original,"    ctx.fillText(tr('Mapa')+' · M',x+size/2,y+size+12);\n    ctx.save();ctx.translate(x,y);watermark(ctx,size,size,true,size+32);ctx.restore();\n    ctx.restore();");
+fs.writeFileSync('source/js/ui/map-ui.js',s);
+for(const file of ['tools/package-apk.ps1','tools/build-online.cjs','tests/apk-compat.test.cjs'])fs.writeFileSync(file,fs.readFileSync(file,'utf8').replaceAll('1.5.3','1.5.4'));
+fs.writeFileSync('tools/patch-manifest.cjs',fs.readFileSync('tools/patch-manifest.cjs','utf8').replace("'2.0':'2.5.3'","'2.0':'2.5.4'").replace('+ 28, at + 16)','+ 29, at + 16)'));
+let doc=fs.readFileSync('README.md','utf8');doc=doc.replace('成品：`dist/PokeSurvivor-1.5.3.apk`（系统版本 2.5.3）','成品：`dist/PokeSurvivor-1.5.4.apk`（系统版本 2.5.4）');const i=doc.indexOf('\n## ');doc=doc.slice(0,i)+'\n## 小地图水印位置调整（1.5.4）\n\n- 战斗小地图的署名移到组件下方，位于“地图 · M”下方，不再遮挡地形和资源。\n- 展开的资源地图继续在画布右下角显示固定水印。在线与离线模式同步生效。\n'+doc.slice(i);fs.writeFileSync('README.md',doc);

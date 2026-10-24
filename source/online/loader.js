@@ -26,7 +26,7 @@
     if(!official)return;
     var list=[];
     for(var el of document.querySelectorAll('link[rel=stylesheet][href],script[src]')){var h=el.href||el.src;if(official.target(h)&&!/app\.min\.js/.test(h))list.push(h);}
-    official.keepAll(list);
+    official.keepAll(list,v);
   }
   addEventListener('load',function(){setTimeout(keepRest,8000);});
   if(kept||!official||!official.app()||!v||!window.fetch){run();return;}
@@ -35,18 +35,20 @@
   // still arriving, so its startup deadline does not switch to the offline
   // version halfway through the download.
   window.__psOfficialPending=true;
+  // With a VPN this takes seconds and the game just starts. Without one the
+  // official site can be very slow: the player may start the local version
+  // instead, which keeps downloading in the background (official-cache.js).
   var box=document.createElement('div');box.id='ps-official-download';box.setAttribute('translate','no');
-  box.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:99998;background:rgba(21,37,75,.92);color:#fff;padding:10px 14px;border-radius:10px;font:14px sans-serif;text-align:center;max-width:90vw';
-  var line=document.createElement('div');line.textContent='官方游戏已更新，正在下载新版本（只需下载一次）…';
-  var bytes=document.createElement('div');bytes.style.cssText='margin-top:4px;color:#ffd23f';
-  box.appendChild(line);box.appendChild(bytes);
-  if(app&&app.openOffline){var local=document.createElement('button');local.textContent='先玩本地离线版';local.style.cssText='margin-top:8px';local.onclick=function(){app.openOffline();};box.appendChild(local);}
+  box.style.cssText='position:fixed;left:50%;bottom:8%;transform:translateX(-50%);z-index:99998;background:rgba(21,37,75,.95);color:#fff;padding:12px 16px;border-radius:10px;font:14px sans-serif;text-align:center;width:min(420px,90vw);box-sizing:border-box';
+  box.innerHTML='<div>官方游戏有新版本，需要下载一次</div><div class="ps-od-bar" style="margin:8px 0 4px;height:8px;border-radius:4px;background:rgba(255,255,255,.18);overflow:hidden"><i style="display:block;height:100%;width:0;background:#ffd23f"></i></div><div class="ps-od-num" style="color:#ffd23f;font-size:13px">连接中…</div><div style="margin-top:6px;font-size:12px;color:#c8d3f0">没开 VPN 时可能要几分钟。可以先玩本地版：新版会在后台继续下载，下好后本地版也能用上新版内容。</div>';
+  if(app&&app.openOffline){var local=document.createElement('button');local.textContent='先玩本地版（后台下载）';local.style.cssText='margin-top:8px;padding:6px 12px';local.onclick=function(){app.openOffline();};box.appendChild(local);}
+  var fill=box.querySelector('.ps-od-bar i'),num=box.querySelector('.ps-od-num');
   function show(){if(document.body&&!box.parentNode)document.body.appendChild(box);}
   show();if(!box.parentNode)addEventListener('DOMContentLoaded',show);
   var started=Date.now(),pinged=0;
   function progress(n){
-    var now=Date.now();
-    bytes.textContent=Math.round(n/1024)+' KB · '+Math.round(n/1024/Math.max(1,(now-started)/1000))+' KB/s';
+    var now=Date.now(),info=official.progressText(n,started);
+    fill.style.width=info.percent+'%';num.textContent=info.text;
     if(app&&app.startupProgress&&now-pinged>1000){pinged=now;try{app.startupProgress();}catch(_){}}
   }
   if(app&&app.startupProgress)try{app.startupProgress();}catch(_){}
