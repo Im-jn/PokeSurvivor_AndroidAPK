@@ -1,6 +1,7 @@
 .class public Lcom/john/pokesurvivor/MainActivity;
 .super Landroid/app/Activity;
 .field public volatile onlineReady:Z
+.field public volatile startupProgressAt:J
 .source "MainActivity.java"
 
 

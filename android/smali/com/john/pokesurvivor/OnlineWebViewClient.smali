@@ -84,6 +84,12 @@
     if-eqz v1, :local_asset_miss
     return-object v1
     :local_asset_miss
+    iget-object v1, p0, Lcom/john/pokesurvivor/OnlineWebViewClient;->activity:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v1, v0}, Lcom/john/pokesurvivor/OfficialCache;->open(Landroid/content/Context;Landroid/net/Uri;)Landroid/webkit/WebResourceResponse;
+    move-result-object v1
+    if-eqz v1, :official_cache_miss
+    return-object v1
+    :official_cache_miss
     invoke-static {v0}, Lcom/john/pokesurvivor/OnlineWebViewClient;->official(Landroid/net/Uri;)Z
     move-result v1
     if-eqz v1, :default
@@ -158,6 +164,9 @@
 
 
 
+
+
+
 .method public onReceivedError(Landroid/webkit/WebView;Landroid/webkit/WebResourceRequest;Landroid/webkit/WebResourceError;)V
     .locals 2
     invoke-virtual {p1}, Landroid/webkit/WebView;->getUrl()Ljava/lang/String;
@@ -181,6 +190,9 @@
     :done
     return-void
 .end method
+
+
+
 
 
 

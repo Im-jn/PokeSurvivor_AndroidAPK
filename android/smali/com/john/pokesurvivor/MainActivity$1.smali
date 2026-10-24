@@ -122,3 +122,43 @@
     iput-boolean v1, v0, Lcom/john/pokesurvivor/MainActivity;->onlineReady:Z
     return-void
 .end method
+
+.method public hasOfficial(Ljava/lang/String;Ljava/lang/String;)Z
+    .locals 1
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v0, p1, p2}, Lcom/john/pokesurvivor/OfficialCache;->has(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Z
+    move-result v0
+    return v0
+.end method
+
+.method public storeOfficial(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+    .locals 1
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v0, p1, p2, p3}, Lcom/john/pokesurvivor/OfficialCache;->store(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+    move-result v0
+    return v0
+.end method
+
+.method public dropOfficial(Ljava/lang/String;Ljava/lang/String;)V
+    .locals 1
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v0, p1, p2}, Lcom/john/pokesurvivor/OfficialCache;->drop(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
+    return-void
+.end method
+
+.method public startupProgress()V
+    .locals 3
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v1
+    iput-wide v1, v0, Lcom/john/pokesurvivor/MainActivity;->startupProgressAt:J
+    return-void
+.end method

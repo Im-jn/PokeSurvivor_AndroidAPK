@@ -2,6 +2,12 @@
     .locals 5
     invoke-interface {p2}, Landroid/webkit/WebResourceRequest;->getUrl()Landroid/net/Uri;
     move-result-object v0
+    iget-object v1, p0, Lcom/john/pokesurvivor/OnlineWebViewClient;->activity:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v1, v0}, Lcom/john/pokesurvivor/OfficialCache;->open(Landroid/content/Context;Landroid/net/Uri;)Landroid/webkit/WebResourceResponse;
+    move-result-object v1
+    if-eqz v1, :official_cache_miss
+    return-object v1
+    :official_cache_miss
     invoke-static {v0}, Lcom/john/pokesurvivor/OnlineWebViewClient;->official(Landroid/net/Uri;)Z
     move-result v1
     if-eqz v1, :default

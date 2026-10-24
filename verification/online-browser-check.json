@@ -4,7 +4,7 @@
   "officialGamePreserved": true,
   "serviceWorkerReplaced": true,
   "endless": {
-    "time": 1802.5242000000299,
+    "time": 1802.5491333333234,
     "active": false,
     "cinematic": false,
     "at": null,
@@ -17,7 +17,7 @@
     "error": null
   },
   "judgment": {
-    "time": 1800.003000000001,
+    "time": 1800.0163333333333,
     "active": true,
     "cinematic": true,
     "debug": {
@@ -28,7 +28,7 @@
   },
   "mapState": {
     "knownTiles": 4096,
-    "resources": 103
+    "resources": 107
   },
   "guestGameAndMapTested": true,
   "realAccountTested": false,
@@ -36,17 +36,16 @@
   "localResourceHits": [
     "assets/fonts/PixelifyPS-400.ttf",
     "assets/fonts/PixelifyPS-700.ttf",
-    "js/official-app.js",
     "assets/fonts/PixelifyPS-400.ttf",
     "assets/fonts/PixelifyPS-700.ttf",
-    "js/official-app.js",
     "vendor/firebase/firebase-app-compat.js",
     "vendor/firebase/firebase-auth-compat.js",
     "vendor/firebase/firebase-firestore-compat.js",
     "vendor/firebase/firebase-database-compat.js"
   ],
   "requestedHosts": {
-    "pokesurvivor.com": 243,
+    "pokesurvivor.com": 434,
+    "raw.githubusercontent.com": 1,
     "www.gstatic.com": 4,
     "identitytoolkit.googleapis.com": 1
   },

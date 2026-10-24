@@ -14,6 +14,86 @@ if(!Array.prototype.flatMap)Object.defineProperty(Array.prototype,'flatMap',{con
 if(!Object.fromEntries)Object.fromEntries=function(it){var o={};Array.from(it,function(e){o[e[0]]=e[1];});return o;};
 if(!Array.prototype.at)Object.defineProperty(Array.prototype,'at',{configurable:true,writable:true,value:function(i){i=Math.trunc(i)||0;if(i<0)i+=this.length;return this[i];}});
 try{sessionStorage.removeItem('ps.online.disable-enhancements');}catch(storageError){}
+// Official files kept by the APK across official updates (native OfficialCache).
+// The APK ships the official build it was packed with; after an official update
+// the new files used to come over a slow connection on every start (the startup
+// deadline then switched to the offline version, again and again). Now each new
+// official file is downloaded once, kept, and served locally from then on.
+// Part of the enhancement prefix (plain ES2018, runs before the official client).
+var psOfficial=(function(){
+  var ALLOWED=/^\/(js\/app\.min\.js|css\/style\.css|js\/core\/locales\.js|js\/lang\/[A-Za-z-]+\.js)$/;
+  // Memory patches (tools/official-patches.cjs), applied to the kept client.
+  var PATCHES=[["(\\['size'\\]>=)0xc8(&&function\\(_0x\\w+\\)\\{const _0x\\w+=\\[\\.\\.\\._0x\\w+\\]\\['filter'\\]\\(\\(\\[,_0x\\w+\\]\\)=>_0x\\w+-_0x\\w+\\['at'\\]>0x4e20\\)\\['sort'\\][^;]{0,160}?Math\\['floor'\\]\\()0x96\\)","$10x78$20x50)"],["(\\['Sprites'\\]=\\(\\(\\(\\)=>\\{const (?:_0x\\w+=_0x\\w+,)?_0x\\w+=)new Map\\(\\)(;function _0x\\w+\\(_0x\\w+\\)\\{return _0x\\w+\\[(?:'SPRITE_META'|_0x\\w+\\(0x\\w+\\))\\])","$1(window.__psSheetCache?window.__psSheetCache():new Map())$2"],["('preload':function\\((_0x\\w+),_0x\\w+=0x1f40,_0x\\w+=!0x1\\)\\{const _0x\\w+=\\[\\];for\\(const _0x\\w+ of \\2\\)for\\(const _0x\\w+ of )(_0x\\w+)\\)","$1($2['length']>0x4?['Idle','Walk']:$3))"],["(const _0x\\w+=)new WeakMap\\(\\)(;function _0x\\w+\\(_0x\\w+\\)\\{(?:const _0x\\w+=a0_0x\\w+;)?let _0x\\w+=_0x\\w+\\['get'\\]\\(_0x\\w+\\);if\\(_0x\\w+\\)return _0x\\w+;_0x\\w+=document\\['createElement'\\]\\('canvas'\\)[^}]{0,400}?'source-in')","$1(window.__psWhiteCache?window.__psWhiteCache():new WeakMap())$2"]];
+  // Versions the APK ships (served without a download): {path: version}.
+  var BUNDLED={"/js/app.min.js":"f9fe33f52c","/css/style.css":"c3b80e4a12","/js/core/locales.js":"7d5654e0c1","/js/lang/":"7d5654e0c1"};
+  function app(){var a=window.AndroidApp;return a&&a.hasOfficial&&a.storeOfficial?a:null;}
+  function target(href){
+    try{var u=new URL(href,'https://pokesurvivor.com/');}catch(_){return null;}
+    if(u.hostname!=='pokesurvivor.com'||!ALLOWED.test(u.pathname)||!u.searchParams.get('v'))return null;
+    // The plain app.min.js URL is answered with the enhancement loader.
+    if(u.pathname==='/js/app.min.js')u.searchParams.set('__ps_original','1');
+    return {url:u.href,path:u.pathname,v:u.searchParams.get('v')};
+  }
+  function has(path,v){if(BUNDLED[path]===v||(/^\/js\/lang\//.test(path)&&BUNDLED['/js/lang/']===v))return true;var a=app();try{return !!(a&&a.hasOfficial(path,v));}catch(_){return false;}}
+  function patch(code){
+    for(var i=0;i<PATCHES.length;i++){
+      var re=new RegExp(PATCHES[i][0],'g'),found=code.match(re);
+      if(found&&found.length===1)code=code.replace(new RegExp(PATCHES[i][0]),PATCHES[i][1]);
+    }
+    return code;
+  }
+  function download(url,onBytes){
+    return fetch(url,{cache:'no-cache'}).then(function(r){
+      if(!r.ok)throw new Error('HTTP '+r.status);
+      if(!r.body||!r.body.getReader||!window.TextDecoder)return r.text();
+      var reader=r.body.getReader(),decoder=new TextDecoder(),parts=[],bytes=0;
+      function pump(){return reader.read().then(function(x){
+        if(x.done){parts.push(decoder.decode());return parts.join('');}
+        bytes+=x.value.length;parts.push(decoder.decode(x.value,{stream:true}));
+        if(onBytes)try{onBytes(bytes);}catch(_){}
+        return pump();
+      });}
+      return pump();
+    });
+  }
+  // Download one official file and keep it. Resolves true when kept.
+  function keep(href,onBytes){
+    var a=app(),t=target(href);
+    if(!a||!t)return Promise.resolve(false);
+    if(has(t.path,t.v))return Promise.resolve(true);
+    return download(t.url,onBytes).then(function(text){
+      if(!text||text.length<64)return false;
+      if(t.path==='/js/app.min.js')text=patch(text);
+      try{return !!a.storeOfficial(t.path,t.v,text);}catch(_){return false;}
+    });
+  }
+  function drop(href){var a=app(),t=target(href);if(a&&t&&a.dropOfficial)try{a.dropOfficial(t.path,t.v);}catch(_){}}
+  // Files of an official page (its HTML), one after the other.
+  function filesOf(html,base){
+    var out=[],re=/(?:href|src)="([^"]*(?:css\/style\.css|js\/core\/locales\.js|js\/app\.min\.js)\?v=[\w-]+)"/g,m;
+    while((m=re.exec(html)))out.push(new URL(m[1],base).href);
+    // locales.js writes js/lang/<lang>.js?v=<same fingerprint>.
+    var loc=html.match(/js\/core\/locales\.js\?v=([\w-]+)/),lang='zh-Hans';
+    try{lang=localStorage.getItem('ps.lang')||lang;}catch(_){}
+    if(loc&&/^[A-Za-z-]+$/.test(lang)&&lang!=='es')out.push(new URL('js/lang/'+lang+'.js?v='+loc[1],base).href);
+    return out;
+  }
+  function keepAll(list){
+    return list.reduce(function(p,href){return p.then(function(){return keep(href).catch(function(){});});},Promise.resolve());
+  }
+  return {app:app,target:target,has:has,keep:keep,drop:drop,filesOf:filesOf,keepAll:keepAll,patch:patch};
+})();
+window.__psOfficial=psOfficial;
+// Offline version (shown when the official site was too slow): fetch the
+// current official files in the background, so the next online start finds
+// them in the APK instead of downloading them again.
+if(location.protocol==='file:'&&psOfficial.app()&&window.fetch)setTimeout(function(){
+  var base='https://pokesurvivor.com/';
+  fetch(base+'?ps_prefetch='+Date.now(),{cache:'no-store'}).then(function(r){return r.ok?r.text():'';}).then(function(html){
+    if(html)return psOfficial.keepAll(psOfficial.filesOf(html,base));
+  }).catch(function(){});
+},15000);
+
 // Hit-flash silhouettes for the patched official client (tools/official-patches.cjs):
 // each is as big as a whole sprite sheet, so keep only those used recently.
 window.__psWhiteCache=function(){
@@ -1135,7 +1215,7 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
 #ps-lay-atk { justify-content:center; align-items:center; gap:6px; margin:6px 0 0; }
 /* Move info popup (tap a move icon in the Pok\xE9dex). */
 #scr-dex .move-icons span[title] { cursor:pointer; }
-#ps-move-tip { position:fixed; z-index:80; max-width:min(320px,calc(100vw - 16px)); padding:8px 10px; font-size:13px; line-height:1.35; pointer-events:auto; }
+#ps-move-tip { position:fixed; z-index:9000; max-width:min(320px,calc(100vw - 16px)); padding:8px 10px; font-size:13px; line-height:1.35; pointer-events:auto; }
 #ps-move-tip[hidden] { display:none; }
 #ps-move-tip .ps-tip-head { display:flex; flex-wrap:wrap; align-items:center; gap:6px; margin-bottom:4px; }
 #ps-move-tip .ps-tip-head b { font-size:15px; }
@@ -1144,6 +1224,10 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
 #ps-move-tip .ps-tip-cat.sp { background:#6a5acd; }
 #ps-move-tip .ps-tip-stats { color:var(--gold); font-size:12px; margin-bottom:2px; }
 #ps-move-tip p { margin:0; color:var(--muted); }
+#ps-move-tip .ps-tip-tm { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:6px; margin-top:6px; padding-top:6px; border-top:1px solid rgba(255,255,255,.15); }
+#ps-move-tip .ps-tip-tm small { color:var(--gold); }
+#ps-move-tip .ps-tip-tm .btn.ps-danger { background:#b8322a; color:#fff; }
+[data-ps-move] { cursor:help; }
 /* Pok\xE9dex page: partner + upgrades side by side. */
 #dex-detail .ps-dex-action { gap:6px; }
 @media (max-height:600px) and (min-width:600px) { #dex-detail .ps-dex-action:not(:empty) { display:flex; } #dex-detail .ps-dex-action .btn { flex:1; } }
@@ -2702,9 +2786,9 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
     const dexScreen = document.getElementById("scr-dex"), detail = document.getElementById("dex-detail"), upgScreen = document.getElementById("scr-upgrades");
     if (!dexScreen || !detail || !G.Moves) return;
     const TEXT = {
-      zh: { upgrades: "\u5F3A\u5316", toDex: "\u67E5\u770B\u56FE\u9274", power: "\u4F24\u5BB3", cd: "\u51B7\u5374", sec: "\u79D2", notOwned: "\u8FD8\u6CA1\u6709\u8FD9\u53EA\u5B9D\u53EF\u68A6\uFF0C\u65E0\u6CD5\u5F3A\u5316\u3002" },
-      en: { upgrades: "Upgrades", toDex: "View in Pok\xE9dex", power: "Damage", cd: "Cooldown", sec: "s", notOwned: "You do not have this Pok\xE9mon yet." },
-      es: { upgrades: "Mejoras", toDex: "Ver en la Pok\xE9dex", power: "Da\xF1o", cd: "Recarga", sec: "s", notOwned: "Todav\xEDa no tienes este Pok\xE9mon." }
+      zh: { upgrades: "\u5F3A\u5316", toDex: "\u67E5\u770B\u56FE\u9274", notOwned: "\u8FD8\u6CA1\u6709\u8FD9\u53EA\u5B9D\u53EF\u68A6\uFF0C\u65E0\u6CD5\u5F3A\u5316\u3002" },
+      en: { upgrades: "Upgrades", toDex: "View in Pok\xE9dex", notOwned: "You do not have this Pok\xE9mon yet." },
+      es: { upgrades: "Mejoras", toDex: "Ver en la Pok\xE9dex", notOwned: "Todav\xEDa no tienes este Pok\xE9mon." }
     };
     const text = () => {
       const l = String(G.I18n && G.I18n.lang || "");
@@ -2717,62 +2801,6 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
         return s;
       }
     };
-    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
-    let byName = null, byNameLang = "";
-    function moveFor(span) {
-      const lang = G.I18n && G.I18n.lang;
-      if (!byName || byNameLang !== lang) {
-        byName = /* @__PURE__ */ new Map();
-        byNameLang = lang;
-        for (const m of Object.values(G.Moves.BY_ID)) {
-          byName.set(T(m.name, "move"), m);
-          byName.set(m.name, m);
-        }
-      }
-      return byName.get(span.getAttribute("title")) || byName.get(span.dataset.psMove);
-    }
-    const tip = document.createElement("div");
-    tip.id = "ps-move-tip";
-    tip.className = "box";
-    tip.setAttribute("translate", "no");
-    tip.hidden = true;
-    document.body.appendChild(tip);
-    let tipFor = null;
-    function hideTip() {
-      tip.hidden = true;
-      tipFor = null;
-    }
-    function showTip(span, m) {
-      const t = text(), color = G.U && G.U.TYPE_COLOR && G.U.TYPE_COLOR[m.type] || "#888";
-      const typeName = T(G.U && G.U.TYPE_NAME && G.U.TYPE_NAME[m.type] || m.type);
-      const cat = m.cat && G.Stats && G.Stats.NAME ? T(G.Stats.NAME[m.cat]) : "";
-      const stats = [m.dmg ? t.power + " " + m.dmg : "", m.cd ? t.cd + " " + m.cd + " " + t.sec : ""].filter(Boolean).join(" \xB7 ");
-      tip.innerHTML = `<div class="ps-tip-head"><b>${esc(T(m.name, "move"))}</b><span class="ps-tip-type" style="background:${esc(color)}">${esc(typeName)}</span>${cat ? `<span class="ps-tip-cat ${m.cat === "special" ? "sp" : "ph"}">${esc(cat)}</span>` : ""}</div>` + (stats ? `<div class="ps-tip-stats">${esc(stats)}</div>` : "") + `<p>${esc(T(m.desc || ""))}</p>`;
-      tip.hidden = false;
-      tipFor = span;
-      const r = span.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
-      let x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8), y = r.top - h - 8;
-      if (y < 8) y = Math.min(innerHeight - h - 8, r.bottom + 8);
-      tip.style.left = x + "px";
-      tip.style.top = y + "px";
-    }
-    document.addEventListener("click", (event) => {
-      const span = event.target.closest && event.target.closest("#scr-dex .move-icons span[title]");
-      if (!span) {
-        if (!tip.hidden && !tip.contains(event.target)) hideTip();
-        return;
-      }
-      const m = moveFor(span);
-      if (!m) return;
-      event.stopPropagation();
-      if (tipFor === span) hideTip();
-      else showTip(span, m);
-    }, true);
-    addEventListener("resize", hideTip);
-    detail.addEventListener("scroll", hideTip, true);
-    new MutationObserver(() => {
-      if (dexScreen.classList.contains("hidden")) hideTip();
-    }).observe(dexScreen, { attributes: true, attributeFilter: ["class"] });
     let wantPicker = 0, lastExtra = "";
     detail.addEventListener("click", (event) => {
       const b = event.target.closest && event.target.closest("[data-extra]");
@@ -2957,6 +2985,231 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
       });
     }
     G.DexExtras = { openUpgrades, openDex, currentDex };
+  })();
+  ;
+  (() => {
+    if (!G.Moves || !G.Moves.BY_ID) return;
+    const DB = G.DB, detail = document.getElementById("dex-detail"), dexScreen = document.getElementById("scr-dex");
+    const TEXT = {
+      zh: { power: "\u4F24\u5BB3", cd: "\u51B7\u5374", sec: "\u79D2", taught: "\u5B66\u4E60\u673A\u5DF2\u5B66\u4F1A", forget: "\u9057\u5FD8\u8FD9\u4E2A\u62DB\u5F0F", confirm: "\u518D\u70B9\u4E00\u6B21\u786E\u8BA4\u9057\u5FD8\uFF08\u5B66\u4E60\u673A\u4E0D\u4F1A\u8FD4\u8FD8\uFF09", forgot: (x) => "\u5DF2\u9057\u5FD8 " + x, inRun: "\u5BF9\u5C40\u4E2D\u4E0D\u80FD\u9057\u5FD8\u62DB\u5F0F" },
+      en: { power: "Damage", cd: "Cooldown", sec: "s", taught: "Learned with a TM", forget: "Forget this move", confirm: "Tap again to forget it (the TM is not refunded)", forgot: (x) => x + " forgotten", inRun: "Moves cannot be forgotten during a run" },
+      es: { power: "Da\xF1o", cd: "Recarga", sec: "s", taught: "Aprendido con una MT", forget: "Olvidar este movimiento", confirm: "Toca otra vez para olvidarlo (la MT no se devuelve)", forgot: (x) => x + " olvidado", inRun: "No se pueden olvidar movimientos durante una partida" }
+    };
+    const text = () => {
+      const l = String(G.I18n && G.I18n.lang || "");
+      return /^zh/.test(l) ? TEXT.zh : l === "es" ? TEXT.es : TEXT.en;
+    };
+    const T = (s, ns) => {
+      try {
+        return G.T(s, ns);
+      } catch (_) {
+        return s;
+      }
+    };
+    const esc = (s) => String(s).replace(/[&<>"']/g, (c) => ({ "&": "&amp;", "<": "&lt;", ">": "&gt;", '"': "&quot;", "'": "&#39;" })[c]);
+    const Icons = G.Icons;
+    if (Icons && typeof Icons.html === "function" && !Icons.html.__psMove) {
+      const html = Icons.html;
+      const marked = function(key) {
+        const out = html.apply(this, arguments);
+        if (typeof key !== "string" || key.slice(0, 5) !== "move:" || typeof out !== "string") return out;
+        return out.replace(/^(\s*<[a-zA-Z][\w-]*)/, '$1 data-ps-move="' + esc(key.slice(5)) + '"');
+      };
+      marked.__psMove = true;
+      Icons.html = marked;
+    }
+    let byName = null, byNameLang = "";
+    function moveByName(name) {
+      const lang = G.I18n && G.I18n.lang;
+      if (!byName || byNameLang !== lang) {
+        byName = /* @__PURE__ */ new Map();
+        byNameLang = lang;
+        for (const m of Object.values(G.Moves.BY_ID)) {
+          byName.set(T(m.name, "move"), m);
+          byName.set(m.name, m);
+        }
+      }
+      return byName.get(name);
+    }
+    function moveOf(el) {
+      const id = el.getAttribute("data-ps-move");
+      if (id) return G.Moves.BY_ID[id] || null;
+      return moveByName(el.getAttribute("title"));
+    }
+    const idOf = (m) => Object.keys(G.Moves.BY_ID).find((k) => G.Moves.BY_ID[k] === m) || m.id;
+    const inRun = () => ["playing", "paused", "held"].includes(G.Game && G.Game.state) || !!(G.Game && G.Game.player && G.Game.state !== "ui" && G.Game.state !== "over");
+    const currentDex = () => G.DexExtras ? G.DexExtras.currentDex() : 0;
+    const taught = (dex) => {
+      try {
+        return (G.Mons.taught(dex) || []).map((x) => typeof x === "string" ? x : x && x.id);
+      } catch (_) {
+        return [];
+      }
+    };
+    const KEY = "ps.forgottenTm";
+    const account = () => {
+      try {
+        return DB.mode + ":" + (DB.user || "guest");
+      } catch (_) {
+        return "guest";
+      }
+    };
+    const readAll = () => {
+      try {
+        return JSON.parse(localStorage.getItem(KEY) || "{}") || {};
+      } catch (_) {
+        return {};
+      }
+    };
+    const writeAll = (all) => {
+      try {
+        localStorage.setItem(KEY, JSON.stringify(all));
+      } catch (_) {
+      }
+    };
+    function tomb(dex, move, on) {
+      const all = readAll(), a = all[account()] = all[account()] || {}, list = a[dex] || [];
+      a[dex] = on ? [...new Set(list.concat(move))] : list.filter((x) => x !== move);
+      if (!a[dex].length) delete a[dex];
+      writeAll(all);
+    }
+    function drop(save2, dex, move) {
+      const list = save2.ptm && save2.ptm[dex];
+      if (!Array.isArray(list) || !list.includes(move)) return false;
+      const left = list.filter((x) => x !== move);
+      if (left.length) save2.ptm[dex] = left;
+      else delete save2.ptm[dex];
+      for (const k of ["pstart", "pstart2"]) if (save2[k] && save2[k][dex] === move) delete save2[k][dex];
+      return true;
+    }
+    function save() {
+      try {
+        DB.commit();
+      } catch (_) {
+      }
+      try {
+        if (typeof DB.saveNow === "function") DB.saveNow();
+      } catch (_) {
+      }
+    }
+    function forget(dex, move) {
+      const s = DB && DB.save;
+      if (!s || inRun() || !drop(s, dex, move)) return false;
+      tomb(dex, move, true);
+      save();
+      return true;
+    }
+    function enforce() {
+      const s = DB && DB.save;
+      if (!s || inRun()) return;
+      const mine = readAll()[account()];
+      if (!mine) return;
+      let changed = false;
+      for (const dex of Object.keys(mine)) for (const move of mine[dex]) changed = drop(s, dex, move) || changed;
+      if (changed) save();
+    }
+    setInterval(enforce, 4e3);
+    if (G.Mons && typeof G.Mons.teach === "function") {
+      const teach = G.Mons.teach;
+      G.Mons.teach = function(dex, move) {
+        const ok = teach.apply(this, arguments);
+        if (ok) tomb(dex, move, false);
+        return ok;
+      };
+    }
+    function refreshDex(dex) {
+      const cell = [...document.querySelectorAll("#dex-grid > .cell")].find((c) => {
+        const n = c.querySelector(".no");
+        return n && +n.textContent === +dex;
+      });
+      if (cell) cell.click();
+    }
+    const tip = document.getElementById("ps-move-tip") || document.createElement("div");
+    tip.id = "ps-move-tip";
+    tip.className = "box";
+    tip.setAttribute("translate", "no");
+    tip.hidden = true;
+    if (!tip.parentNode) document.body.appendChild(tip);
+    let tipFor = null, armed = 0;
+    function hideTip() {
+      tip.hidden = true;
+      tipFor = null;
+      armed = 0;
+    }
+    function forgettable(anchor, id) {
+      if (!detail || !detail.contains(anchor) || !dexScreen || dexScreen.classList.contains("hidden")) return 0;
+      const dex = currentDex();
+      try {
+        if (!dex || !DB.owns(dex)) return 0;
+      } catch (_) {
+        return 0;
+      }
+      return taught(dex).includes(id) ? dex : 0;
+    }
+    function showTip(anchor, m) {
+      const t = text(), id = idOf(m), color = G.U && G.U.TYPE_COLOR && G.U.TYPE_COLOR[m.type] || "#888";
+      const typeName = T(G.U && G.U.TYPE_NAME && G.U.TYPE_NAME[m.type] || m.type);
+      const cat = m.cat && G.Stats && G.Stats.NAME ? T(G.Stats.NAME[m.cat]) : "";
+      const stats = [m.dmg ? t.power + " " + m.dmg : "", m.cd ? t.cd + " " + m.cd + " " + t.sec : ""].filter(Boolean).join(" \xB7 ");
+      const dex = forgettable(anchor, id);
+      tip.innerHTML = `<div class="ps-tip-head"><b>${esc(T(m.name, "move"))}</b><span class="ps-tip-type" style="background:${esc(color)}">${esc(typeName)}</span>${cat ? `<span class="ps-tip-cat ${m.cat === "special" ? "sp" : "ph"}">${esc(cat)}</span>` : ""}</div>` + (stats ? `<div class="ps-tip-stats">${esc(stats)}</div>` : "") + `<p>${esc(T(m.desc || ""))}</p>` + (dex ? `<div class="ps-tip-tm"><small>${esc(t.taught)}</small><button type="button" class="btn small" data-ps-forget="${esc(id)}">${esc(t.forget)}</button></div>` : "");
+      tip.hidden = false;
+      tipFor = anchor;
+      armed = 0;
+      const forgetBtn = tip.querySelector("[data-ps-forget]");
+      if (forgetBtn) forgetBtn.addEventListener("click", (event) => {
+        event.stopPropagation();
+        if (inRun()) {
+          try {
+            G.UI.toast(t.inRun, 2500);
+          } catch (_) {
+          }
+          return;
+        }
+        if (!armed || performance.now() - armed > 5e3) {
+          armed = performance.now();
+          forgetBtn.textContent = t.confirm;
+          forgetBtn.classList.add("ps-danger");
+          return;
+        }
+        if (forget(dex, id)) {
+          hideTip();
+          try {
+            G.UI.toast(t.forgot(T(m.name, "move")), 2500);
+          } catch (_) {
+          }
+          refreshDex(dex);
+        }
+      });
+      const r = anchor.getBoundingClientRect(), w = tip.offsetWidth, h = tip.offsetHeight;
+      const x = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), innerWidth - w - 8);
+      let y = r.top - h - 8;
+      if (y < 8) y = Math.min(innerHeight - h - 8, r.bottom + 8);
+      tip.style.left = x + "px";
+      tip.style.top = Math.max(8, y) + "px";
+    }
+    document.addEventListener("click", (event) => {
+      const target = event.target;
+      if (!target || !target.closest || tip.contains(target)) return;
+      const el = target.closest("[data-ps-move]") || target.closest("#scr-dex .move-icons span[title]");
+      const m = el && moveOf(el);
+      if (!m) {
+        if (!tip.hidden) hideTip();
+        return;
+      }
+      event.stopPropagation();
+      event.preventDefault();
+      if (tipFor === el) hideTip();
+      else showTip(el, m);
+    }, true);
+    addEventListener("resize", hideTip);
+    document.addEventListener("scroll", () => {
+      if (!tip.hidden) hideTip();
+    }, true);
+    setInterval(() => {
+      if (!tip.hidden && tipFor && (!tipFor.isConnected || !tipFor.getClientRects().length)) hideTip();
+    }, 400);
+    G.MoveInfo = { show: showTip, hide: hideTip, forget, enforce, forgotten: () => readAll()[account()] || {} };
   })();
   ;
   (() => {
@@ -3674,7 +3927,7 @@ html[lang="zh"] { --font:'Pixelify','Noto Sans CJK SC','Microsoft YaHei',system-
     }
   });
   observer.observe(document.getElementById("set-body"), { childList: true });
-  window.__PSOnlineInstalled = { version: "1.5.0", origin: location.origin, officialDBUnchanged: G.DB === officialDB, officialConfigUnchanged: G.FIREBASE_CONFIG === officialConfig, officialFlowUnchanged: G.Flow === officialFlow, officialGameUnchanged: G.Game === officialGame && G.Game.startRun === officialStart, judgment: !!G.Judgment };
+  window.__PSOnlineInstalled = { version: "1.5.2", origin: location.origin, officialDBUnchanged: G.DB === officialDB, officialConfigUnchanged: G.FIREBASE_CONFIG === officialConfig, officialFlowUnchanged: G.Flow === officialFlow, officialGameUnchanged: G.Game === officialGame && G.Game.startRun === officialStart, judgment: !!G.Judgment };
 });
 var prior=Object.getOwnPropertyDescriptor(Object.prototype,'Game');
 var captured=false;
@@ -3688,7 +3941,72 @@ var setter=function(value){
   }
 };
 if(!prior)Object.defineProperty(Object.prototype,'Game',{configurable:true,set:setter});
-setTimeout(function(){var d=Object.getOwnPropertyDescriptor(Object.prototype,'Game');if(d&&d.set===setter)delete Object.prototype.Game;if(!captured&&!window.__PSOnlineInstalled)recover('Official game object was not captured');},20000);
+// Give up on capturing only once the official client has run: on a slow
+// connection it can take minutes to arrive (a fixed 20 s showed the failure
+// message while the game was still loading, and the game then ran without the
+// enhancements). The loader sets __psOfficialPending while it downloads.
+function checkCaptured(){
+  if(window.__psOfficialPending)return;
+  var d=Object.getOwnPropertyDescriptor(Object.prototype,'Game');if(d&&d.set===setter)delete Object.prototype.Game;
+  if(!captured&&!window.__PSOnlineInstalled)recover('Official game object was not captured');
+}
+window.__psCheckCaptured=function(){setTimeout(checkCaptured,5000);};
+if(document.readyState==='complete')window.__psCheckCaptured();
+else if(typeof addEventListener==='function')addEventListener('load',window.__psCheckCaptured);
+else setTimeout(checkCaptured,20000);
 })();
 
-;(function(){var src=document.currentScript&&document.currentScript.src;if(!src)return;var url=new URL(src);url.searchParams.set('__ps_original','1');var script=document.createElement('script');script.src=url.href;script.async=false;script.onerror=function(){window.__PSOnlineInstallError='Official client download failed';if(window.AndroidApp&&AndroidApp.openOffline)AndroidApp.openOffline();};addEventListener('error',function(e){if(window.__PSOnlineInstalled||!e||!/SyntaxError|Unexpected token/i.test(String(e.message))||!/app\.min\.js/.test(String(e.filename)))return;window.__PSOnlineInstallError='Official client needs a newer WebView';if(window.AndroidApp&&AndroidApp.openOffline)AndroidApp.openOffline();});document.head.appendChild(script);})();
+// Runs the real official client after the enhancement prefix. WebView fetches
+// it with its own network stack (VPN/proxy, cookies, TLS). After an official
+// update the new client is downloaded once with visible progress and kept by
+// the APK (official-cache.js); later starts load it from the phone.
+;(function(){
+  var src=document.currentScript&&document.currentScript.src;if(!src)return;
+  var url=new URL(src);url.searchParams.set('__ps_original','1');
+  var app=window.AndroidApp,official=window.__psOfficial,v=url.searchParams.get('v')||'';
+  var kept=!!(official&&v&&official.has('/js/app.min.js',v));
+  function offline(reason){window.__PSOnlineInstallError=reason;if(app&&app.openOffline)app.openOffline();}
+  function run(){
+    var script=document.createElement('script');script.src=url.href;script.async=false;
+    script.onload=function(){window.__psOfficialPending=false;if(window.__psCheckCaptured)window.__psCheckCaptured();};
+    script.onerror=function(){window.__psOfficialPending=false;offline('Official client download failed');};
+    document.head.appendChild(script);
+  }
+  addEventListener('error',function(e){
+    if(window.__PSOnlineInstalled||!e||!/SyntaxError|Unexpected token/i.test(String(e.message))||!/app\.min\.js/.test(String(e.filename)))return;
+    // A kept copy that does not run is thrown away; the next start downloads it again.
+    if(official)official.drop(url.href);
+    offline('Official client needs a newer WebView');
+  });
+  // Afterwards keep this page's style sheet and language files too.
+  function keepRest(){
+    if(!official)return;
+    var list=[];
+    for(var el of document.querySelectorAll('link[rel=stylesheet][href],script[src]')){var h=el.href||el.src;if(official.target(h)&&!/app\.min\.js/.test(h))list.push(h);}
+    official.keepAll(list);
+  }
+  addEventListener('load',function(){setTimeout(keepRest,8000);});
+  if(kept||!official||!official.app()||!v||!window.fetch){run();return;}
+
+  // Not kept yet: download it here, showing progress. Tell the APK that data is
+  // still arriving, so its startup deadline does not switch to the offline
+  // version halfway through the download.
+  window.__psOfficialPending=true;
+  var box=document.createElement('div');box.id='ps-official-download';box.setAttribute('translate','no');
+  box.style.cssText='position:fixed;left:50%;bottom:12%;transform:translateX(-50%);z-index:99998;background:rgba(21,37,75,.92);color:#fff;padding:10px 14px;border-radius:10px;font:14px sans-serif;text-align:center;max-width:90vw';
+  var line=document.createElement('div');line.textContent='官方游戏已更新，正在下载新版本（只需下载一次）…';
+  var bytes=document.createElement('div');bytes.style.cssText='margin-top:4px;color:#ffd23f';
+  box.appendChild(line);box.appendChild(bytes);
+  if(app&&app.openOffline){var local=document.createElement('button');local.textContent='先玩本地离线版';local.style.cssText='margin-top:8px';local.onclick=function(){app.openOffline();};box.appendChild(local);}
+  function show(){if(document.body&&!box.parentNode)document.body.appendChild(box);}
+  show();if(!box.parentNode)addEventListener('DOMContentLoaded',show);
+  var started=Date.now(),pinged=0;
+  function progress(n){
+    var now=Date.now();
+    bytes.textContent=Math.round(n/1024)+' KB · '+Math.round(n/1024/Math.max(1,(now-started)/1000))+' KB/s';
+    if(app&&app.startupProgress&&now-pinged>1000){pinged=now;try{app.startupProgress();}catch(_){}}
+  }
+  if(app&&app.startupProgress)try{app.startupProgress();}catch(_){}
+  function done(){if(box.parentNode)box.parentNode.removeChild(box);run();}
+  official.keep(url.href,progress).then(done,done);
+})();

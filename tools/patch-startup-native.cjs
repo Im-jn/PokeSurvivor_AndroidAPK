@@ -110,6 +110,99 @@ edit('MainActivity$1',s=>s.includes('.method public startupReady()')?s:s+`
     return-void
 .end method
 `);
+// Copies of official files kept across official updates (OfficialCache), and
+// download progress: while the official client is still arriving, the startup
+// deadline waits (StartupTimeout) instead of switching to the offline version.
+edit('MainActivity',s=>s.includes('.field public volatile startupProgressAt:J')?s:s.replace('.field public volatile onlineReady:Z','.field public volatile onlineReady:Z\n.field public volatile startupProgressAt:J'));
+edit('MainActivity$1',s=>s.includes('.method public storeOfficial(')?s:s+`
+.method public hasOfficial(Ljava/lang/String;Ljava/lang/String;)Z
+    .locals 1
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v0, p1, p2}, Lcom/john/pokesurvivor/OfficialCache;->has(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)Z
+    move-result v0
+    return v0
+.end method
+
+.method public storeOfficial(Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+    .locals 1
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v0, p1, p2, p3}, Lcom/john/pokesurvivor/OfficialCache;->store(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;Ljava/lang/String;)Z
+    move-result v0
+    return v0
+.end method
+
+.method public dropOfficial(Ljava/lang/String;Ljava/lang/String;)V
+    .locals 1
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {v0, p1, p2}, Lcom/john/pokesurvivor/OfficialCache;->drop(Landroid/content/Context;Ljava/lang/String;Ljava/lang/String;)V
+    return-void
+.end method
+
+.method public startupProgress()V
+    .locals 3
+    .annotation runtime Landroid/webkit/JavascriptInterface;
+    .end annotation
+    iget-object v0, p0, Lcom/john/pokesurvivor/MainActivity$1;->this$0:Lcom/john/pokesurvivor/MainActivity;
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v1
+    iput-wide v1, v0, Lcom/john/pokesurvivor/MainActivity;->startupProgressAt:J
+    return-void
+.end method
+`);
+edit('StartupTimeout',s=>s.includes('.field private started:J')?s:s
+ .replace('.field private generation:I','.field private generation:I\n.field private started:J')
+ .replace(/\.method public constructor <init>\([\s\S]*?\.end method/,`.method public constructor <init>(Lcom/john/pokesurvivor/OnlineWebViewClient;Landroid/webkit/WebView;I)V
+    .locals 2
+    invoke-direct {p0}, Ljava/lang/Object;-><init>()V
+    iput-object p1, p0, Lcom/john/pokesurvivor/StartupTimeout;->client:Lcom/john/pokesurvivor/OnlineWebViewClient;
+    iput-object p2, p0, Lcom/john/pokesurvivor/StartupTimeout;->view:Landroid/webkit/WebView;
+    iput p3, p0, Lcom/john/pokesurvivor/StartupTimeout;->generation:I
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v0
+    iput-wide v0, p0, Lcom/john/pokesurvivor/StartupTimeout;->started:J
+    return-void
+.end method`)
+ .replace(/\.method public run\(\)V[\s\S]*?\.end method/,`.method public run()V
+    .locals 8
+    iget-object v0, p0, Lcom/john/pokesurvivor/StartupTimeout;->client:Lcom/john/pokesurvivor/OnlineWebViewClient;
+    iget v1, v0, Lcom/john/pokesurvivor/OnlineWebViewClient;->generation:I
+    iget v2, p0, Lcom/john/pokesurvivor/StartupTimeout;->generation:I
+    if-ne v1, v2, :done
+    iget-object v0, v0, Lcom/john/pokesurvivor/OnlineWebViewClient;->activity:Lcom/john/pokesurvivor/MainActivity;
+    iget-boolean v1, v0, Lcom/john/pokesurvivor/MainActivity;->onlineReady:Z
+    if-nez v1, :done
+    # The official client is still downloading (progress in the last 15 s):
+    # check again in 10 s, for at most 4 minutes in all.
+    invoke-static {}, Landroid/os/SystemClock;->elapsedRealtime()J
+    move-result-wide v1
+    iget-wide v3, v0, Lcom/john/pokesurvivor/MainActivity;->startupProgressAt:J
+    sub-long v3, v1, v3
+    const-wide/16 v5, 0x3a98
+    cmp-long v7, v3, v5
+    if-gez v7, :give_up
+    iget-wide v3, p0, Lcom/john/pokesurvivor/StartupTimeout;->started:J
+    sub-long v3, v1, v3
+    const-wide/32 v5, 0x3a980
+    cmp-long v7, v3, v5
+    if-gez v7, :give_up
+    iget-object v0, p0, Lcom/john/pokesurvivor/StartupTimeout;->view:Landroid/webkit/WebView;
+    const-wide/16 v1, 0x2710
+    invoke-virtual {v0, p0, v1, v2}, Landroid/webkit/WebView;->postDelayed(Ljava/lang/Runnable;J)Z
+    return-void
+    :give_up
+    iget-object v0, p0, Lcom/john/pokesurvivor/StartupTimeout;->view:Landroid/webkit/WebView;
+    invoke-virtual {v0}, Landroid/webkit/WebView;->stopLoading()V
+    const-string v1, "file:///android_asset/www/index.html?offline&auto=timeout"
+    invoke-virtual {v0, v1}, Landroid/webkit/WebView;->loadUrl(Ljava/lang/String;)V
+    :done
+    return-void
+.end method`));
 edit('OnlineWebViewClient',s=>{
  s=s.replace('.field private activity:', '.field public activity:');
  if(!s.includes('.field public generation:I'))s=s.replace('.super Landroid/webkit/WebViewClient;','.super Landroid/webkit/WebViewClient;\n.field public generation:I');

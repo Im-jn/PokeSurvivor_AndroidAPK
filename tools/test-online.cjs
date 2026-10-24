@@ -86,7 +86,10 @@ const root=path.resolve(__dirname,'..');
     await page.locator('#gacha-gens .gen-tab').nth(8).click();await page.waitForTimeout(150);
     const banner=await page.locator('#banner').boundingBox(),title=await page.locator('#banner-title').boundingBox();
     assert(title.y>=banner.y,'banner title clipped above scrolling area');
-    for(const id of ['pull-1','pull-10','pull-10b']){
+    // The official pull buttons change (x1 was replaced by x100): check those present.
+    const pulls=await page.evaluate(()=>[...document.querySelectorAll('#scr-gacha button[id^=pull-]')].filter(b=>/^pull-\d+b?$/.test(b.id)).map(b=>b.id));
+    assert(pulls.length>=2,'pull buttons found: '+pulls);
+    for(const id of pulls){
       const r=await page.locator('#'+id).boundingBox();
       assert(r&&r.y>=0&&r.y+r.height<=height-6,'pull button outside viewport: '+JSON.stringify(r));
     }

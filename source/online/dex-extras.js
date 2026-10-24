@@ -1,6 +1,4 @@
-// Pokédex conveniences:
-//  - tap a move icon in a Pokémon's page: name, type, physical/special,
-//    damage, cooldown and description;
+// Pokédex conveniences (move info popups: move-info.js):
 //  - "Upgrades" button on an owned Pokémon's page, opening the Upgrades screen
 //    on that Pokémon; the Upgrades screen gets a button back to its Pokédex
 //    page (and its Back button returns there when it was opened from it).
@@ -8,47 +6,12 @@
   const dexScreen=document.getElementById('scr-dex'),detail=document.getElementById('dex-detail'),upgScreen=document.getElementById('scr-upgrades');
   if(!dexScreen||!detail||!G.Moves)return;
   const TEXT={
-    zh:{upgrades:'强化',toDex:'查看图鉴',power:'伤害',cd:'冷却',sec:'秒',notOwned:'还没有这只宝可梦，无法强化。'},
-    en:{upgrades:'Upgrades',toDex:'View in Pokédex',power:'Damage',cd:'Cooldown',sec:'s',notOwned:'You do not have this Pokémon yet.'},
-    es:{upgrades:'Mejoras',toDex:'Ver en la Pokédex',power:'Daño',cd:'Recarga',sec:'s',notOwned:'Todavía no tienes este Pokémon.'}
+    zh:{upgrades:'强化',toDex:'查看图鉴',notOwned:'还没有这只宝可梦，无法强化。'},
+    en:{upgrades:'Upgrades',toDex:'View in Pokédex',notOwned:'You do not have this Pokémon yet.'},
+    es:{upgrades:'Mejoras',toDex:'Ver en la Pokédex',notOwned:'Todavía no tienes este Pokémon.'}
   };
   const text=()=>{const l=String(G.I18n&&G.I18n.lang||'');return /^zh/.test(l)?TEXT.zh:l==='es'?TEXT.es:TEXT.en;};
   const T=(s,ns)=>{try{return G.T(s,ns);}catch(_){return s;}};
-  const esc=s=>String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
-
-  // ---------- move info ----------
-  let byName=null,byNameLang='';
-  function moveFor(span){
-    const lang=G.I18n&&G.I18n.lang;
-    if(!byName||byNameLang!==lang){byName=new Map();byNameLang=lang;for(const m of Object.values(G.Moves.BY_ID)){byName.set(T(m.name,'move'),m);byName.set(m.name,m);}}
-    return byName.get(span.getAttribute('title'))||byName.get(span.dataset.psMove);
-  }
-  const tip=document.createElement('div');tip.id='ps-move-tip';tip.className='box';tip.setAttribute('translate','no');tip.hidden=true;document.body.appendChild(tip);
-  let tipFor=null;
-  function hideTip(){tip.hidden=true;tipFor=null;}
-  function showTip(span,m){
-    const t=text(),color=(G.U&&G.U.TYPE_COLOR&&G.U.TYPE_COLOR[m.type])||'#888';
-    const typeName=T((G.U&&G.U.TYPE_NAME&&G.U.TYPE_NAME[m.type])||m.type);
-    const cat=m.cat&&G.Stats&&G.Stats.NAME?T(G.Stats.NAME[m.cat]):'';
-    const stats=[m.dmg?t.power+' '+m.dmg:'',m.cd?t.cd+' '+m.cd+' '+t.sec:''].filter(Boolean).join(' · ');
-    tip.innerHTML=`<div class="ps-tip-head"><b>${esc(T(m.name,'move'))}</b><span class="ps-tip-type" style="background:${esc(color)}">${esc(typeName)}</span>${cat?`<span class="ps-tip-cat ${m.cat==='special'?'sp':'ph'}">${esc(cat)}</span>`:''}</div>`
-      +(stats?`<div class="ps-tip-stats">${esc(stats)}</div>`:'')+`<p>${esc(T(m.desc||''))}</p>`;
-    tip.hidden=false;tipFor=span;
-    const r=span.getBoundingClientRect(),w=tip.offsetWidth,h=tip.offsetHeight;
-    let x=Math.min(Math.max(8,r.left+r.width/2-w/2),innerWidth-w-8),y=r.top-h-8;
-    if(y<8)y=Math.min(innerHeight-h-8,r.bottom+8);
-    tip.style.left=x+'px';tip.style.top=y+'px';
-  }
-  document.addEventListener('click',event=>{
-    const span=event.target.closest&&event.target.closest('#scr-dex .move-icons span[title]');
-    if(!span){if(!tip.hidden&&!tip.contains(event.target))hideTip();return;}
-    const m=moveFor(span);if(!m)return;
-    event.stopPropagation();
-    if(tipFor===span)hideTip();else showTip(span,m);
-  },true);
-  addEventListener('resize',hideTip);
-  detail.addEventListener('scroll',hideTip,true);
-  new MutationObserver(()=>{if(dexScreen.classList.contains('hidden'))hideTip();}).observe(dexScreen,{attributes:true,attributeFilter:['class']});
 
   // ---------- item pickers (Mint, Ability Capsule / Patch, TM) ----------
   // Tapping an item button in a Pokémon's page opens its choices at the end of

@@ -6,7 +6,7 @@ const dev=read('source/dev.html');
 const map=dev.slice(dev.indexOf('<section id="scr-map"'),dev.indexOf('<!-- scripts:begin -->'));
 const modules=['js/core/audio.js'].map(p=>`/* ${p} */
 `+read('source/'+p));
-modules.push(read('source/js/ui/map-ui.js'),read('source/online/game-adapter.js'),read('source/online/run-mode.js'),read('source/online/dex-layout.js'),read('source/online/dex-extras.js'),read('source/online/attack-button.js'),read('source/online/cloud-sync.js'),read('source/online/run-rescue.js'),read('source/js/core/mobile-layout.js'));
+modules.push(read('source/js/ui/map-ui.js'),read('source/online/game-adapter.js'),read('source/online/run-mode.js'),read('source/online/dex-layout.js'),read('source/online/dex-extras.js'),read('source/online/move-info.js'),read('source/online/attack-button.js'),read('source/online/cloud-sync.js'),read('source/online/run-rescue.js'),read('source/js/core/mobile-layout.js'));
 // Our own UI strings (map, pause button) for the official i18n: Spanish keys.
 const labels=require('./map-labels.cjs');
 const labelsZh=Object.fromEntries(Object.entries(labels).map(([k,v])=>[k,v[0]])),labelsEn=Object.fromEntries(Object.entries(labels).map(([k,v])=>[k,v[1]]));
@@ -87,7 +87,7 @@ const install=`function install(G,recover) {
     if(bar){const b=document.createElement('button');b.id='ps-go-online';b.className='btn small gold';b.setAttribute('translate','no');b.textContent='返回在线版';b.onclick=()=>{try{G.DB.commit(true);}catch(_){}AndroidApp.openOnline();};bar.prepend(b);}
   }
   const observer=new MutationObserver(()=>{if(document.querySelector('#scr-settings:not(.hidden)')){addOfflineEntry();}});observer.observe(document.getElementById('set-body'),{childList:true});
-  window.__PSOnlineInstalled={version:'1.5.0',origin:location.origin,officialDBUnchanged:G.DB===officialDB,officialConfigUnchanged:G.FIREBASE_CONFIG===officialConfig,officialFlowUnchanged:G.Flow===officialFlow,officialGameUnchanged:G.Game===officialGame&&G.Game.startRun===officialStart,judgment:!!G.Judgment};
+  window.__PSOnlineInstalled={version:'1.5.2',origin:location.origin,officialDBUnchanged:G.DB===officialDB,officialConfigUnchanged:G.FIREBASE_CONFIG===officialConfig,officialFlowUnchanged:G.Flow===officialFlow,officialGameUnchanged:G.Game===officialGame&&G.Game.startRun===officialStart,judgment:!!G.Judgment};
 }
 `;
 // Prototype interception is temporary and is removed as soon as the official
@@ -96,6 +96,14 @@ const esbuild=require('./esbuild/node_modules/esbuild');
 // Many phones (no Google Play) keep an old Android System WebView. The official
 // client runs on Chrome 64+, so compile our code to the same level.
 const TARGET='chrome64';
+// Kept official files (native OfficialCache) + the memory patches they get.
+function bundledVersions(){
+  const html=read('source/vendor/official/index.html'),ver=re=>(html.match(re)||[])[1];
+  const out={'/js/app.min.js':ver(/js\/app\.min\.js\?v=([\w-]+)/),'/css/style.css':ver(/css\/style\.css\?v=([\w-]+)/),'/js/core/locales.js':ver(/js\/core\/locales\.js\?v=([\w-]+)/)};
+  out['/js/lang/']=out['/js/core/locales.js'];
+  return out;
+}
+const officialCache=read('source/online/official-cache.js').replace('__PS_BUNDLED__',JSON.stringify(bundledVersions())).replace('__PS_PATCHES__',JSON.stringify(require('./official-patches.cjs').patches.map(p=>[p.re.source,p.to])));
 const installCompiled=esbuild.transformSync('('+install+')',{target:TARGET,loader:'js'}).code.trim().replace(/;$/,'');
 const prefix=`;(function(){'use strict';
 if((location.protocol!=='file:'&&(location.protocol!=='https:'||location.hostname!=='pokesurvivor.com'))||window.__PSOnlinePrefix)return;
@@ -113,6 +121,7 @@ if(!Array.prototype.flatMap)Object.defineProperty(Array.prototype,'flatMap',{con
 if(!Object.fromEntries)Object.fromEntries=function(it){var o={};Array.from(it,function(e){o[e[0]]=e[1];});return o;};
 if(!Array.prototype.at)Object.defineProperty(Array.prototype,'at',{configurable:true,writable:true,value:function(i){i=Math.trunc(i)||0;if(i<0)i+=this.length;return this[i];}});
 try{sessionStorage.removeItem('ps.online.disable-enhancements');}catch(storageError){}
+${officialCache}
 // Hit-flash silhouettes for the patched official client (tools/official-patches.cjs):
 // each is as big as a whole sprite sheet, so keep only those used recently.
 window.__psWhiteCache=function(){
@@ -194,13 +203,24 @@ var setter=function(value){
   }
 };
 if(!prior)Object.defineProperty(Object.prototype,'Game',{configurable:true,set:setter});
-setTimeout(function(){var d=Object.getOwnPropertyDescriptor(Object.prototype,'Game');if(d&&d.set===setter)delete Object.prototype.Game;if(!captured&&!window.__PSOnlineInstalled)recover('Official game object was not captured');},20000);
+// Give up on capturing only once the official client has run: on a slow
+// connection it can take minutes to arrive (a fixed 20 s showed the failure
+// message while the game was still loading, and the game then ran without the
+// enhancements). The loader sets __psOfficialPending while it downloads.
+function checkCaptured(){
+  if(window.__psOfficialPending)return;
+  var d=Object.getOwnPropertyDescriptor(Object.prototype,'Game');if(d&&d.set===setter)delete Object.prototype.Game;
+  if(!captured&&!window.__PSOnlineInstalled)recover('Official game object was not captured');
+}
+window.__psCheckCaptured=function(){setTimeout(checkCaptured,5000);};
+if(document.readyState==='complete')window.__psCheckCaptured();
+else if(typeof addEventListener==='function')addEventListener('load',window.__psCheckCaptured);
+else setTimeout(checkCaptured,20000);
 })();\n`;
 new vm.Script(prefix);
 fs.mkdirSync(path.join(root,'source/online'),{recursive:true});
 fs.writeFileSync(path.join(root,'source/online/bridge-prefix.js'),prefix);
 // Let WebView download the real script with its own VPN/proxy, cookies and TLS.
 // The previous Java URLConnection used a separate network stack.
-const loader=`\n;(function(){var src=document.currentScript&&document.currentScript.src;if(!src)return;var url=new URL(src);url.searchParams.set('__ps_original','1');var script=document.createElement('script');script.src=url.href;script.async=false;script.onerror=function(){window.__PSOnlineInstallError='Official client download failed';if(window.AndroidApp&&AndroidApp.openOffline)AndroidApp.openOffline();};addEventListener('error',function(e){if(window.__PSOnlineInstalled||!e||!/SyntaxError|Unexpected token/i.test(String(e.message))||!/app\\.min\\.js/.test(String(e.filename)))return;window.__PSOnlineInstallError='Official client needs a newer WebView';if(window.AndroidApp&&AndroidApp.openOffline)AndroidApp.openOffline();});document.head.appendChild(script);})();\n`;
-fs.writeFileSync(path.join(root,'source/online/client-loader.js'),prefix+loader);
+const loader=read('source/online/loader.js');fs.writeFileSync(path.join(root,'source/online/client-loader.js'),prefix+loader);
 console.log('Online enhancement prefix: '+Buffer.byteLength(prefix)+' bytes; official auth/DB untouched');
